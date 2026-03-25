@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LowQuotes Call Evaluator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--black:#0a0a0a;--dark:#111214;--card:#17191c;--border:#252830;--accent:#e8c547;--accent2:#e05c3a;--text:#e8e8e8;--muted:#666b78;--green:#4caf7d;--red:#e05c3a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;}
+header{background:var(--dark);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:200;flex-wrap:wrap;}
+.logo-mark{width:34px;height:34px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--black);flex-shrink:0;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;}
+header span{font-size:12px;color:var(--muted);margin-left:4px;}
+.tabs{display:flex;gap:0;margin-left:auto;}
+.tab-btn{padding:8px 20px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;transition:all .2s;}
+.tab-btn:first-child{border-radius:6px 0 0 6px;}
+.tab-btn:last-child{border-radius:0 6px 6px 0;border-left:none;}
+.tab-btn.active{background:var(--accent);color:var(--black);border-color:var(--accent);}
+.container{max-width:1100px;margin:0 auto;padding:32px 24px 80px;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px;}
+.panel-label{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:3px;color:var(--accent);margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.panel-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.fields-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.field input,.field select{width:100%;background:var(--black);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field select option{background:var(--dark);}
+textarea{width:100%;background:var(--black);border:1px solid var(--border);border-radius:8px;padding:14px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;line-height:1.7;resize:vertical;min-height:220px;outline:none;transition:border-color .2s;}
+textarea:focus{border-color:var(--accent);}
+textarea::placeholder{color:var(--muted);}
+.btn-primary{width:100%;padding:15px;background:var(--accent);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;border:none;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary:hover{background:#f0d060;transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-secondary{padding:10px 18px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;border-radius:7px;cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{border-color:var(--text);color:var(--text);}
+.btn-accent{padding:10px 18px;background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.3);color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;border-radius:7px;cursor:pointer;transition:all .2s;}
+.btn-accent:hover{background:rgba(232,197,71,.2);}
+.loading{display:none;text-align:center;padding:50px 0;}
+.loading.active{display:block;}
+.loading-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:20px;}
+.loading-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;animation:loadpulse 1.8s ease-in-out infinite;width:60%;}
+@keyframes loadpulse{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.loading p{color:var(--muted);font-size:13px;letter-spacing:1px;}
+.result-section-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;color:var(--accent);margin:28px 0 14px;display:flex;align-items:center;gap:10px;}
+.result-section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.score-banner{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;}
+.score-circle{width:84px;height:84px;border-radius:50%;border:3px solid var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.score-number{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;}
+.score-denom{font-size:10px;color:var(--muted);letter-spacing:1px;}
+.score-info{flex:1;min-width:200px;}
+.score-info h2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:4px;}
+.score-info p{color:var(--muted);font-size:14px;line-height:1.5;}
+.score-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.tag{padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.tag-red{background:rgba(224,92,58,.15);color:var(--red);border:1px solid rgba(224,92,58,.3);}
+.tag-green{background:rgba(76,175,125,.15);color:var(--green);border:1px solid rgba(76,175,125,.3);}
+.tag-yellow{background:rgba(232,197,71,.15);color:var(--accent);border:1px solid rgba(232,197,71,.3);}
+.section-scores{display:grid;gap:10px;margin-bottom:20px;}
+.section-score-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.sec-name{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;line-height:1.3;}
+.sec-score{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+.score-high{color:var(--green);}.score-mid{color:var(--accent);}.score-low{color:var(--red);}
+.sec-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden;}
+.sec-bar-fill{height:100%;border-radius:2px;}
+.correction-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:10px;padding:20px 24px;margin-bottom:14px;}
+.correction-card.priority-high{border-left-color:var(--red);}
+.correction-card.priority-medium{border-left-color:var(--accent);}
+.correction-card.priority-low{border-left-color:var(--green);}
+.correction-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;}
+.correction-number{width:26px;height:26px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--muted);flex-shrink:0;}
+.correction-title{flex:1;font-size:14px;font-weight:600;}
+.priority-badge{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:4px;flex-shrink:0;}
+.badge-high{background:rgba(224,92,58,.2);color:var(--red);}
+.badge-medium{background:rgba(232,197,71,.2);color:var(--accent);}
+.badge-low{background:rgba(76,175,125,.2);color:var(--green);}
+.step{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}
+.step-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.step-icon.moment{background:rgba(232,197,71,.2);color:var(--accent);}
+.step-icon.wrong{background:rgba(224,92,58,.2);color:var(--red);}
+.step-icon.right{background:rgba(76,175,125,.2);color:var(--green);}
+.step-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.step-text{font-size:14px;line-height:1.5;}
+.script-line{background:var(--black);border:1px solid var(--border);border-left:2px solid var(--green);border-radius:6px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:13px;line-height:1.6;color:#b8e8c8;margin-top:6px;}
+.positives-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:10px;padding:20px 24px;margin-bottom:16px;}
+.positives-card ul{list-style:none;display:flex;flex-direction:column;gap:7px;margin-top:10px;}
+.positives-card li{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5;}
+.positives-card li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;}
+.monitoring-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:16px;}
+.monitoring-items{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.monitoring-item{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;background:var(--black);border-radius:8px;border:1px solid var(--border);}
+.m-icon{font-size:15px;flex-shrink:0;margin-top:2px;}
+.m-text{font-size:14px;line-height:1.5;}
+.error-card{background:rgba(224,92,58,.08);border:1px solid rgba(224,92,58,.3);border-radius:8px;padding:14px;color:var(--red);font-size:14px;display:none;margin-top:12px;}
+.error-card.active{display:block;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-copy{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;}
+.btn-copy:hover{border-color:var(--accent);color:var(--accent);}
+.case-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:16px;}
+.case-card:hover{border-color:var(--accent);}
+.case-avatar{width:40px;height:40px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent);flex-shrink:0;}
+.case-info{flex:1;}
+.case-name{font-weight:600;font-size:15px;margin-bottom:2px;}
+.case-meta{font-size:12px;color:var(--muted);}
+.call-item{background:var(--black);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;}
+.call-item:hover{border-color:var(--muted);}
+.call-num{width:28px;height:28px;border-radius:6px;background:var(--border);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--muted);flex-shrink:0;}
+.cross-call-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:16px 20px;margin-bottom:10px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;overflow-y:auto;padding:40px 20px;}
+.modal-box{max-width:680px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--accent);}
+.modal-close{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;}
+@media(max-width:700px){.fields-row{grid-template-columns:1fr;}.score-banner{flex-direction:column;}.tabs{margin-left:0;margin-top:8px;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-mark">LQ</div>
+  <h1>CALL EVALUATOR <span>— LowQuotes Life</span></h1>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('evaluate')">▶ EVALUATE</button>
+    <button class="tab-btn" onclick="switchTab('cases')">📁 CASES</button>
+    <button class="tab-btn" onclick="switchTab('cement')">🔒 CEMENT CHECK</button>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- EVALUATE TAB -->
+<div id="tab-evaluate" class="tab-panel active">
+  <div class="panel">
+    <div class="panel-label">CALL DETAILS</div>
+    <div class="fields-row">
+      <div class="field">
+        <label>Advisor Name</label>
+        <input type="text" id="advisorName" placeholder="e.g. Isabel" />
+      </div>
+      <div class="field">
+        <label>Add to Case <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <select id="caseSelect"><option value="">— Standalone evaluation —</option></select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Additional Context <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="text" id="callContext" placeholder="e.g. Call 2 — Marissa health app, sale agreed on previous call" />
+    </div>
+    <div id="caseContextBanner" style="display:none;background:rgba(232,197,71,.06);border:1px solid rgba(232,197,71,.25);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--accent)">
+      📁 <strong id="caseContextText"></strong>
+    </div>
+    <label style="display:block;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Paste Call Transcript</label>
+    <textarea id="transcript" placeholder="Paste the full call transcript here. The AI will detect call type, product and outcome automatically."></textarea>
+
+    <div style="margin-top:16px;padding:16px 18px;background:var(--black);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="toggleSaleOnBoard()" id="saleCheckRow">
+      <div id="saleCheckbox" style="width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;background:transparent"></div>
+      <div>
+        <div style="font-weight:600;font-size:14px;color:var(--text)">Sale on the Board</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Tick this if a sale was agreed and DocuSign was sent or signed on this call — cementing will be evaluated as mandatory</div>
+      </div>
+    </div>
+    <div class="error-card" id="errorCard">Please fill in the advisor name and paste the transcript.</div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn-primary" id="evalBtn" onclick="evaluateCall()" style="flex:1;margin-top:0">▶ EVALUATE CALL</button>
+      <button onclick="resetForm()" style="padding:15px 20px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border-radius:8px;cursor:pointer;white-space:nowrap" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">↺ NEW CALL</button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+    <p id="loadingMsg">Reading the transcript...</p>
+  </div>
+
+  <div id="results" style="display:none">
+    <div id="resultsInner"></div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn-copy" onclick="copyReport()">⎘ Copy Report</button>
+      <button class="btn-accent" id="emailBtn" onclick="generateEmail()">✉ Draft Email</button>
+      <button class="btn-accent" id="saveCallBtn" onclick="saveCallToCase()" style="display:none">💾 Save to Case</button>
+    </div>
+  </div>
+</div>
+
+<!-- CASES TAB -->
+<div id="tab-cases" class="tab-panel">
+  <div id="createCaseRow" style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;align-items:flex-end">
+    <div class="field" style="flex:1;min-width:180px;margin:0"><label>Client Name</label><input type="text" id="newClientName" placeholder="e.g. Gary & Marissa O'Brien" /></div>
+    <div class="field" style="flex:1;min-width:180px;margin:0"><label>Advisor</label><input type="text" id="newAdvisorName" placeholder="e.g. Isabel Humphreys" /></div>
+    <div class="field" style="flex:1;min-width:160px;margin:0"><label>Product</label><input type="text" id="newProduct" placeholder="e.g. Mortgage Protection" /></div>
+    <button class="btn-primary" onclick="createCase()" style="width:auto;padding:10px 22px;white-space:nowrap;margin-top:0;align-self:flex-end">+ NEW CASE</button>
+  </div>
+  <div id="casesLoading" style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Loading cases...</div>
+  <div id="casesList"></div>
+
+  <div id="caseDetail" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="btn-secondary" onclick="closeCaseDetail()">← Back</button>
+      <div id="caseDetailTitle" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;flex:1"></div>
+      <button class="btn-accent" onclick="generateCaseReport()" id="reportBtn">📊 FULL CASE REPORT</button>
+    </div>
+    <div id="caseCallsList"></div>
+    <div id="caseReportSection" style="display:none">
+      <div class="loading" id="reportLoading"><div class="loading-bar"><div class="loading-fill"></div></div><p>Generating case report...</p></div>
+      <div id="caseReportContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CEMENT CHECK TAB -->
+<div id="tab-cement" class="tab-panel" style="font-family:'Georgia',serif">
+
+  <!-- TrueWealth-style header banner -->
+  <div style="background:#1a2332;padding:28px 40px;margin:-32px -24px 32px;border-bottom:3px solid #2d9d8f">
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-family:'Georgia',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">
+          <span style="color:#fff">True</span><span style="color:#2d9d8f">Wealth</span> — Cement Quality Check
+        </div>
+        <div style="font-size:13px;color:#8ba4b8;font-family:'DM Sans',sans-serif">Quick check: is this sale solid, or is it a clawback waiting to happen?</div>
+      </div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:#8ba4b8;text-align:right">
+        Based on Shane's 7-element<br>cementing framework
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:800px;margin:0 auto">
+
+    <!-- Explainer block -->
+    <div style="background:#fff;border:1px solid #ddd8ce;border-left:4px solid #2d9d8f;border-radius:8px;padding:18px 22px;margin-bottom:24px;font-family:'DM Sans',sans-serif">
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2d9d8f;margin-bottom:8px">HOW TO USE THIS</div>
+      <div style="font-size:14px;color:#444;line-height:1.6">Paste the transcript from the <strong>last call on any sale currently on the board</strong>. The AI will check it against the full 7-element cementing framework and tell you if it's solid, at risk, or needs a re-cement call before the policy activates.</div>
+    </div>
+
+    <!-- Input form -->
+    <div style="background:#fff;border:1px solid #ddd8ce;border-radius:10px;padding:28px;margin-bottom:20px;font-family:'DM Sans',sans-serif">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:6px">Advisor</label>
+          <input type="text" id="cementAdvisor" placeholder="e.g. Rebecca" style="width:100%;padding:10px 14px;border:1px solid #ddd8ce;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;background:#faf8f4;outline:none;color:#1a2332">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:6px">Client Name</label>
+          <input type="text" id="cementClient" placeholder="e.g. Brendan O'Mahony" style="width:100%;padding:10px 14px;border:1px solid #ddd8ce;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;background:#faf8f4;outline:none;color:#1a2332">
+        </div>
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:6px">Paste Last Call Transcript</label>
+        <textarea id="cementTranscript" placeholder="Paste the transcript from the final call on this sale. The more complete the better — even a few key exchanges around the close will work." style="width:100%;min-height:200px;padding:14px;border:1px solid #ddd8ce;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;line-height:1.7;background:#faf8f4;outline:none;resize:vertical;color:#1a2332"></textarea>
+      </div>
+      <div id="cementError" style="display:none;background:#fdf0ee;border:1px solid #e8645a;border-radius:6px;padding:12px 16px;color:#c0392b;font-size:14px;margin-bottom:16px">Please fill in the advisor name and paste the transcript.</div>
+      <button onclick="runCementCheck()" id="cementBtn" style="width:100%;padding:15px;background:#1a2332;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;border:none;border-radius:8px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='#2d9d8f'" onmouseout="this.style.background='#1a2332'">🔒 CHECK CEMENT QUALITY</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="cementLoading" style="display:none;text-align:center;padding:50px 0;font-family:'DM Sans',sans-serif">
+      <div style="width:100%;height:3px;background:#ddd8ce;border-radius:2px;overflow:hidden;margin-bottom:20px"><div style="height:100%;background:#2d9d8f;border-radius:2px;animation:loadpulse 1.8s ease-in-out infinite;width:60%"></div></div>
+      <p style="color:#888;font-size:13px;letter-spacing:1px" id="cementLoadMsg">Checking against the 7-element cementing framework...</p>
+    </div>
+
+    <!-- Results -->
+    <div id="cementResults" style="display:none"></div>
+
+  </div>
+</div>
+
+</div>
+
+<!-- EMAIL MODAL -->
+<div id="emailModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">ADVISOR EMAIL DRAFT</div>
+      <button class="modal-close" onclick="closeEmailModal()">✕</button>
+    </div>
+    <div id="emailLoading" style="text-align:center;padding:30px 0;display:none">
+      <div class="loading-bar" style="margin-bottom:14px"><div class="loading-fill"></div></div>
+      <p style="color:var(--muted);font-size:13px">Drafting email...</p>
+    </div>
+    <div id="emailContent" style="display:none">
+      <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">TO</div><div id="emailTo" style="font-size:14px;background:var(--black);border:1px solid var(--border);border-radius:6px;padding:9px 13px"></div></div>
+      <div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">SUBJECT</div><div id="emailSubject" style="font-size:14px;background:var(--black);border:1px solid var(--border);border-radius:6px;padding:9px 13px"></div></div>
+      <div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">EMAIL BODY</div><textarea id="emailBody" style="min-height:340px"></textarea></div>
+      <div id="followUpBlock" style="display:none;background:rgba(232,197,71,.06);border:1px solid rgba(232,197,71,.25);border-left:3px solid var(--accent);border-radius:8px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:6px">📋 YOUR FOLLOW-UP ACTION</div>
+        <div id="followUpText" style="font-size:14px;line-height:1.5"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="copyEmail()" style="flex:1;padding:13px;background:var(--accent);color:var(--black);font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border:none;border-radius:8px;cursor:pointer" id="copyEmailBtn">⎘ COPY EMAIL</button>
+        <button onclick="closeEmailModal()" class="btn-secondary">CLOSE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_CONTEXT = `
+You are a senior sales coach at LowQuotes, Ireland's largest life insurance broker. Evaluate calls with Shane's standard: direct, specific, commercially focused, behaviour-change oriented. Reference exact moments. Link every gap to a commercial consequence.
+
+THE IDEAL CALL FLOW — IN THIS EXACT ORDER:
+1. Introduction
+2. Health App (medical qualification FIRST — before fact find)
+3. Fact Find (financial needs — AFTER health app)
+4. Recommendation
+5. Objection Handling / Close
+6. Cement (sales only)
+7. Post-cement upsell / referral booking
+
+CRITICAL SEQUENCE RULE: Health App comes BEFORE the Fact Find. Never the other way around. Do not penalise an advisor for doing health app before fact find — that is CORRECT. Only flag if product/price is discussed before health app, or if recommendation is made before fact find.
+
+1. INTRODUCTION — Score: broker role explained, shopping stopped, rapport built, life milestones used.
+- Explain LowQuotes role: 5 insurers, we stand in the middle, best price and product.
+- Stop shopping around — non-negotiable.
+- Build rapport BEFORE process. Rushing into health app = client feels processed.
+- LIFE MILESTONES: If client mentions AIP/mortgage, wedding, baby, target date, new job — advisor MUST acknowledge AND use for rapport+urgency. AIP = "Congratulations — 30% of people never get this far, let's make sure your cover is in place." Wedding = "Perfect reason to get this sorted before the big day." Target date = "We need to move — let me show you how straightforward this is." FLAG if missed.
+- Score 9-10: broker role compelling, shopping locked, rapport genuine, milestones used. Score 4-6: rushed, minimal rapport. Score 0-3: straight to process.
+
+2. HEALTH APP — Score: done before fact find and product discussion, importance explained, standard terms celebrated, second life handled correctly.
+- SEPARATE from fact find. Health app fields: DOB, height, weight, smoking, job title, marital status, family history, medications, conditions.
+- Frame BEFORE starting: "These are the exact questions life companies use to decide if they'll cover you and at what price. Very personal but essential — poor health can mean declined, delayed, GP questionnaire or nurse medical."
+- STANDARD TERMS: ~30% don't get standard terms. When accepted, CELEBRATE IT: "Brilliant news — you're accepted at standard terms. Around 30% of people don't get this. You've come through clean — best price, full cover. Let's lock this in." If achieved and NOT celebrated — flag as missed sales moment.
+- JOINT APP: Second life not on call = cannot complete their health app. Correct = complete first life, save, arrange separate call. CREDIT if handled correctly. FLAG only if ignored entirely.
+
+3. FACT FIND — Score: done after health app and before recommendation, correctly framed, data used to build need and spot upsells.
+- 3 pages: Personal+dependents+objectives+will | Income+outgoings | Assets+existing cover.
+- FRAMING: "The reason we go through this is so we can give you the best advice possible and make sure we're fully compliant — everything we recommend will be tailored specifically to your situation."
+- NEVER say: "it'll only take 2 minutes" (minimises it), "just to make sure there is money to pay for it" (wrong purpose), or anything with complaint or legal language.
+- Keep intro brief and warm — do not over-explain. Kills momentum and risks losing the sale.
+- Second life not on call: complete first life only, save. CREDIT this — it is correct procedure.
+- Health app data can carry over — no duplication needed. Credit this efficiency.
+- Use income vs outgoings: protection gap. Dependents: emotional anchor. Existing cover gaps: build the case. Objectives: ground the recommendation.
+- Children's education mentioned but not returned to: flag as unresolved upsell.
+- AUTO ENROLMENT: Always 1.5% employee contribution. If income above ~44k euros: higher rate taxpayer getting 20% relief not 40%. Personal pension gives full 40% relief. True Wealth referral. Flag as TRAINING NEED — not a performance issue.
+- Score 9-10: full fact find used to create need and spot upsells. Score 4-6: partial, treated as admin. Score 0-3: skipped or done after sale.
+
+4. RECOMMENDATION — Sell the PROBLEM. Specific to fact find data. Emotional urgency. Score: grounded in fact find, problem sold, urgency created.
+
+5. OBJECTION HANDLING — acknowledge then align then reframe then close. Never release without challenge.
+
+6. APPOINTMENT BOOKING — THIS IS A SCORED SECTION. Score 0-10 separately. Commercial efficiency depends on this.
+The advisor's most valuable asset is time on the phone with clients. Every vague or missed appointment is dead commercial time — clients go cold, competitors get in, advisors waste time chasing.
+
+WHAT A GOOD APPOINTMENT LOOKS LIKE:
+- Specific day and time agreed — not "sometime this week" or "I'll try you later"
+- Confirmed twice — advisor repeats it back: "So that's Wednesday at 3pm — I'll have that locked in for you"
+- Purpose stated — client knows exactly what the next call is for: "I'll have your recommendation ready and we can go through it together"
+- Urgency anchored — tied to the client's own deadline or milestone where possible: "That gives us plenty of time before May"
+- Both parties confirmed — if partner/second life also needs to be called, that appointment is ALSO locked in with a specific time
+
+APPOINTMENT SCORING (0-10):
+- 0-2: No appointment made. Call ends with "I'll be in touch" or "call me back when you're ready." This is a serious failure.
+- 3-4: Vague callback mentioned but no specific time. "I'll call you this week." Not good enough.
+- 5-6: Approximate time given but not confirmed or anchored to client's needs.
+- 7-8: Specific time agreed and confirmed. Purpose clear. Minor elements missing.
+- 9-10: Specific time, confirmed twice, purpose stated, urgency anchored to client milestone, both parties covered if joint application.
+
+FLAG AS HIGH PRIORITY if:
+- Call ends without any appointment for the primary client
+- Appointment booked with partner/second life but NOT with the primary enquirer
+- Advisor says "call me back" — puts the onus on the client, not the advisor
+- Vague day without time ("I'll call you Thursday" with no time)
+- No mention of what the next call is for
+
+CREDIT if:
+- Advisor locks in a firm specific time unprompted
+- Advisor ties the appointment to the client's urgency (wedding, May deadline, AIP)
+- Advisor confirms the appointment twice
+- Advisor clearly states what they will have ready for the next call
+
+7. CLOSE — "Will we go ahead and put that in place for you today?" Must be attempted.
+
+DOCUSIGN — CORRECT UNDERSTANDING:
+Not every client can sign DocuSign live on the call — this is perfectly fine and acceptable.
+What matters is: (1) Was DocuSign sent? (2) Was a clear commitment to sign obtained? (3) Was cementing done BEFORE DocuSign was sent?
+
+THE CORRECT SEQUENCE: Close → Cement → Send DocuSign → Client signs (on call or shortly after)
+Cementing must happen BEFORE DocuSign is sent. The cementing creates the commitment to sign.
+
+EVALUATE DOCUSIGN AS FOLLOWS:
+- Signed live on the call = ideal, credit it
+- Sent + client gave clear commitment ("I'll sign it as soon as we hang up") = perfectly acceptable, credit it
+- Sent + vague "I'll sign it later" with no specific time = weak, flag it
+- Sent + no commitment or timeframe at all = high risk, flag it
+- Cementing done AFTER DocuSign sent = wrong sequence, flag it
+
+FLAG if: DocuSign sent with no commitment to sign, or advisor accepted vague "later" without pinning down when.
+CREDIT if: Client committed clearly to sign immediately after the call, or signed live, or advisor set a specific callback time to confirm it was signed.
+
+8. CEMENTING — required whenever a sale is AGREED, whether DocuSign is signed or not:
+If a sale was agreed on this call, cementing is MANDATORY. Do not wait for DocuSign to be signed before cementing — cement first, then send DocuSign. A properly cemented client will sign. An uncemented client may not.
+
+ALL 7 ELEMENTS REQUIRED:
+1. AFFORDABILITY STRESS TEST: "Are you comfortable paying this even in tighter months? I need your assurance on this before we proceed." Single most important lock-in. Absent = FAIL.
+2. LONG-TERM COMMITMENT FRAMING: "This is a long-term contract — 25 years." Must be stated explicitly.
+3. CANCELLATION CONSEQUENCES: Costs in two ways — (a) unprotected, (b) pay more later. Discount loss, age repricing, starting again, insurer perception. Must be stated clearly.
+4. CHANGES THROUGH LOWQUOTES ONLY: Any changes must come back through LowQuotes to keep the discount. Going elsewhere loses it.
+5. VERBAL COMMITMENT: "Are you fully with me on this?" Passive responses (okay, grand, that makes sense) are NOT commitment.
+6. CLIENT OWNERSHIP: Client must OWN the decision in their own words, not just passively agree.
+7. CONTROL MAINTAINED: Advisor does not hand control back before cementing is complete. "I'll wait for your email" before cementing = easy exit for the client.
+
+PERSUASION IS NOT CEMENTING: "I really hope you proceed" = persuasion. Cementing = behavioural commitment locking. Completely different.
+
+PASS: All 7 elements, genuine verbal commitment.
+PARTIAL: 4-6 elements, missing affordability stress test or verbal lock-in.
+FAIL: Fewer than 4 elements, or affordability stress test absent.
+FAIL = clawbackRisk high automatically.
+
+9. POST-CEMENT UPSELL: After cementing, introduce spotted opportunities. Book follow-up with specific date/time. SPOT IT, PARK IT, CLOSE FIRST, RETURN TO IT.
+
+UPSELL CHECKLIST (detect from fact find data):
+- Income Protection: no IP plus self-employed or no sick pay = urgent
+- Serious Illness: not in place = mention it
+- Pension/AVC: auto enrolment plus income above 44k = True Wealth referral
+- Savings Plan: saving monthly with no structure, or education goal mentioned
+- Mortgage Protection top-up: mortgage exists, cover insufficient
+- Additional Life Cover: cover inadequate for dependents/income
+- Policy Review: old/overpriced existing policies
+Timing rule: mentioned before primary close = risky. After close = correct. Missed entirely = flag.
+
+COMMON SENSE:
+- Client called back ready: jumping to pre-screening is fine
+- Short admin call: do not penalise missing intro/fact find
+- Good judgment: credit it
+- Product errors (confusing SI with IP): always flag
+- Joint app, second life absent: credit correct handling
+- Fact find after sale: major red flag
+- No close attempted: say so directly
+
+DETECT CALL TYPE: First Contact | Follow-Up/Recommendation | Closing Call | Quick Activation | Retention
+Only score sections relevant to that call type. Set irrelevant sections to null.
+Cementing is scored whenever a sale was AGREED on this call — regardless of whether DocuSign was signed or not.
+
+OUTPUT: ONLY valid JSON. No markdown. Strings max 25 words. Max 3 corrections.
+
+{
+  "detectedCallType": "<First Contact|Follow-Up/Recommendation|Closing Call|Quick Activation|Retention>",
+  "detectedProduct": "<product>",
+  "detectedOutcome": "<outcome>",
+  "docuSignStatus": "<not applicable|sent unsigned|signed on call|signed after call|walked through live>",
+  "saleOnBoard": <true|false|null — true ONLY if DocuSign was signed. False if sent but unsigned. Null if no sale attempted>,
+  "overallScore": <0-100>,
+  "callFlowScore": <0-10>,
+  "cementingVerdict": "<PASS|PARTIAL|FAIL|null>",
+  "verdict": "<max 20 words>",
+  "clawbackRisk": "<low|medium|high|n/a>",
+  "sectionScores": {
+    "introduction": <0-10 or null>,
+    "preScreening": <0-10 or null>,
+    "factFind": <0-10 or null>,
+    "recommendation": <0-10 or null>,
+    "appointmentBooking": <0-10 or null — score this on EVERY call where the call did not end in a completed sale. Null only if sale was fully closed and cemented on this call>,
+    "cementing": <0-10 or null>
+  },
+  "upsellOpportunities": [
+    {"product": "<name>", "spotted": <bool>, "actioned": <bool>, "timing": "<correct after primary close|too early before close|missed entirely|not applicable>", "note": "<max 15 words>"}
+  ],
+  "factFindGaps": ["<max 10 words>"],
+  "lifeMilestonesMissed": ["<max 15 words>"],
+  "standardTermsCelebrated": <true|false|null>,
+  "autoEnrolmentFlag": <null or {"detected": true, "incomeAbove44k": <true|false|"unknown">, "trainingNoteForAdvisor": "<max 20 words>"}>,
+  "cementingChecklist": <null or {
+    "affordabilityStressTest": <bool>,
+    "longTermFraming": <bool>,
+    "cancellationConsequences": <bool>,
+    "changesThroughLowQuotes": <bool>,
+    "verbalCommitment": <bool>,
+    "clientOwnership": <bool>,
+    "controlMaintained": <bool>
+  }>,
+  "keyCommitmentsForNextCall": ["<max 15 words>"],
+  "pendingItems": ["<max 15 words>"],
+  "positives": ["<max 15 words>", "<max 15 words>", "<max 15 words>"],
+  "corrections": [
+    {"priority": "<high|medium|low>", "title": "<5 words>", "moment": "<timestamp + one sentence>", "whatWentWrong": "<max 20 words>", "correctApproach": "<max 20 words>", "scriptLine": "<max 25 words>"}
+  ],
+  "monitoringPlan": ["<max 20 words>", "<max 20 words>", "<max 20 words>"],
+  "trainingFocus": "<max 15 words>"
+}
+`;
+
+let currentResult=null,currentAdvisor=null,currentTranscript=null,currentCaseId=null,allCases={};
+const loadingMsgs=["Reading the transcript...","Determining call type...","Checking script sequence...","Scoring each section...","Identifying coaching moments...","Building your report..."];
+let msgInterval;
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active',(i===0&&tab==='evaluate')||(i===1&&tab==='cases')||(i===2&&tab==='cement'));
+  });
+  document.getElementById('tab-evaluate').classList.toggle('active',tab==='evaluate');
+  document.getElementById('tab-cases').classList.toggle('active',tab==='cases');
+  document.getElementById('tab-cement').classList.toggle('active',tab==='cement');
+  if(tab==='cases')loadCases();
+}
+
+const cementLoadMsgs = [
+  "Checking against the 7-element cementing framework...",
+  "Looking for affordability stress test...",
+  "Checking for verbal commitment...",
+  "Assessing client ownership...",
+  "Evaluating cancellation consequences...",
+  "Building your cement report..."
+];
+
+async function runCementCheck(){
+  const advisor = document.getElementById('cementAdvisor').value.trim();
+  const client = document.getElementById('cementClient').value.trim();
+  const transcript = document.getElementById('cementTranscript').value.trim();
+  const errEl = document.getElementById('cementError');
+  if(!advisor||!transcript){errEl.style.display='block';return;}
+  errEl.style.display='none';
+  document.getElementById('cementBtn').disabled=true;
+  document.getElementById('cementLoading').style.display='block';
+  document.getElementById('cementResults').style.display='none';
+
+  let idx=0;
+  const cementInterval=setInterval(()=>{idx=(idx+1)%cementLoadMsgs.length;document.getElementById('cementLoadMsg').textContent=cementLoadMsgs[idx];},2000);
+
+  const CEMENT_SYSTEM = `You are a senior sales coach at LowQuotes assessing cement quality on a completed sale. Evaluate the transcript ONLY for cementing. Ignore everything else.
+
+THE 7-ELEMENT CEMENTING FRAMEWORK:
+1. AFFORDABILITY STRESS TEST: Client asked if comfortable paying even in tighter months. Most critical.
+2. LONG-TERM COMMITMENT FRAMING: Policy explicitly framed as 25-year long-term commitment.
+3. CANCELLATION CONSEQUENCES: Client told cancelling costs them — discount loss, age repricing, starting again, insurer perception.
+4. CHANGES THROUGH LOWQUOTES ONLY: Client told changes must come back through LowQuotes to keep discount.
+5. VERBAL COMMITMENT: "Are you fully with me on this?" asked directly. Passive (okay/grand/that makes sense) is NOT commitment.
+6. CLIENT OWNERSHIP: Client expressed decision in own words, not just passively agreed.
+7. CONTROL MAINTAINED: Advisor did not hand control back before cementing complete.
+
+Persuasion (I hope you proceed, great policy) is NOT cementing. Cementing = behavioural commitment locking.
+
+VERDICT: 7/7=Solid, 5-6/7=Watch, 3-4/7=At Risk, 0-2/7=High Risk
+
+Return ONLY valid JSON, no markdown, no preamble:
+{"verdict":"<Solid|Watch|At Risk|High Risk>","score":<0-7>,"headline":"<blunt one sentence max 20 words>","clawbackRisk":"<low|medium|high|critical>","elements":{"affordabilityStressTest":{"pass":<bool>,"note":"<max 15 words>"},"longTermFraming":{"pass":<bool>,"note":"<max 15 words>"},"cancellationConsequences":{"pass":<bool>,"note":"<max 15 words>"},"changesThroughLowQuotes":{"pass":<bool>,"note":"<max 15 words>"},"verbalCommitment":{"pass":<bool>,"note":"<max 15 words>"},"clientOwnership":{"pass":<bool>,"note":"<max 15 words>"},"controlMaintained":{"pass":<bool>,"note":"<max 15 words>"}},"biggestGap":"<max 20 words>","action":"<none needed|coaching note recommended|re-cement call required, max 20 words>"}`;
+
+  try{
+    const resp = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+        system: CEMENT_SYSTEM,
+        messages:[{role:"user",content:`Advisor: ${advisor}\nClient: ${client||'Not specified'}\n\nTRANSCRIPT:\n${transcript}\n\nEvaluate cementing only. Return valid JSON only.`}]})});
+
+    if(!resp.ok){
+      throw new Error(`API error: ${resp.status}`);
+    }
+
+    const data = await resp.json();
+
+    if(data.error){
+      throw new Error(data.error.message||'API returned error');
+    }
+
+    let raw = data.content.map(i=>i.text||'').join('');
+    let clean = raw.replace(/```json|```/g,'').trim();
+
+    // JSON recovery if truncated
+    if(!clean.endsWith('}')){
+      const lb=clean.lastIndexOf('}');
+      if(lb>0)clean=clean.substring(0,lb+1);
+      const o=(clean.match(/\{/g)||[]).length,c=(clean.match(/\}/g)||[]).length;
+      for(let i=0;i<o-c;i++)clean+='}';
+    }
+
+    const result = JSON.parse(clean);
+    clearInterval(cementInterval);
+    document.getElementById('cementLoading').style.display='none';
+    renderCementCheck(result, advisor, client);
+  }catch(e){
+    clearInterval(cementInterval);
+    document.getElementById('cementLoading').style.display='none';
+    document.getElementById('cementBtn').disabled=false;
+    document.getElementById('cementError').textContent='Something went wrong: ' + e.message + '. Please try again.';
+    document.getElementById('cementError').style.display='block';
+    console.error('Cement check error:', e);
+  }
+}
+
+function renderCementCheck(r, advisor, client){
+  const verdictColors={
+    'Solid':{bg:'#e8f7f4',border:'#2d9d8f',text:'#1a6b5e',badge:'#2d9d8f'},
+    'Watch':{bg:'#fef9e7',border:'#f0c040',text:'#8a6800',badge:'#f0c040'},
+    'At Risk':{bg:'#fef0e8',border:'#e87840',text:'#8a3800',badge:'#e87840'},
+    'High Risk':{bg:'#fdf0ee',border:'#e05c3a',text:'#8a1a0a',badge:'#e05c3a'}
+  };
+  // Always recalculate score from checklist — AI self-reported scores can be wrong
+  if(r.elements){
+    const keys = ['affordabilityStressTest','longTermFraming','cancellationConsequences','changesThroughLowQuotes','verbalCommitment','clientOwnership','controlMaintained'];
+    r.score = keys.filter(k => r.elements[k] && r.elements[k].pass === true).length;
+    if(r.score === 7) r.verdict = 'Solid';
+    else if(r.score >= 5) r.verdict = 'Watch';
+    else if(r.score >= 3) r.verdict = 'At Risk';
+    else r.verdict = 'High Risk';
+    if(r.score === 7) r.clawbackRisk = 'low';
+    else if(r.score >= 5) r.clawbackRisk = 'medium';
+    else if(r.score >= 3) r.clawbackRisk = 'high';
+    else r.clawbackRisk = 'critical';
+  }
+  const vc = verdictColors[r.verdict] || verdictColors['High Risk'];
+  const elementLabels={
+    affordabilityStressTest:'Affordability stress test',
+    longTermFraming:'Long-term commitment framed',
+    cancellationConsequences:'Cancellation consequences explained',
+    changesThroughLowQuotes:'Changes through LowQuotes only',
+    verbalCommitment:'Verbal commitment obtained',
+    clientOwnership:'Client owns the decision',
+    controlMaintained:'Control maintained through activation'
+  };
+
+  let html = `
+  <div style="background:${vc.bg};border:2px solid ${vc.border};border-radius:12px;padding:24px 28px;margin-bottom:20px;font-family:'DM Sans',sans-serif">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="text-align:center;background:${vc.border};border-radius:50%;width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;line-height:1">${r.score}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.8);letter-spacing:1px">/7</div>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+          <div style="font-family:'Georgia',serif;font-size:20px;font-weight:700;color:#1a2332">${advisor}${client?' — '+client:''}</div>
+          <span style="background:${vc.border};color:#fff;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;padding:4px 12px;border-radius:20px">${r.verdict.toUpperCase()}</span>
+        </div>
+        <div style="font-size:14px;color:${vc.text};font-style:italic;margin-bottom:8px">"${r.headline}"</div>
+        <div style="font-size:12px;color:#888">Clawback risk: <strong style="color:${vc.border};text-transform:uppercase">${r.clawbackRisk}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #ddd8ce;border-radius:10px;padding:22px 26px;margin-bottom:16px;font-family:'DM Sans',sans-serif">
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#1a2332;margin-bottom:16px;border-bottom:1px solid #eee;padding-bottom:10px">7-ELEMENT CEMENT CHECKLIST</div>
+    ${Object.entries(elementLabels).map(([key,label])=>{
+      const el = r.elements[key];
+      const pass = el && el.pass;
+      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f0ece4">
+        <div style="width:22px;height:22px;border-radius:50%;background:${pass?'#2d9d8f':'#e05c3a'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+          <span style="color:#fff;font-size:12px;font-weight:700">${pass?'✓':'✕'}</span>
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;color:#1a2332;margin-bottom:2px">${label}</div>
+          ${el&&el.note?`<div style="font-size:13px;color:${pass?'#555':'#c0392b'}">${el.note}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  if(r.biggestGap || r.action){
+    html+=`<div style="background:#faf8f4;border:1px solid #ddd8ce;border-left:4px solid #1a2332;border-radius:8px;padding:18px 22px;margin-bottom:16px;font-family:'DM Sans',sans-serif">
+      ${r.biggestGap?`<div style="margin-bottom:${r.action?'12px':'0'}"><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:4px">BIGGEST GAP</div><div style="font-size:14px;color:#1a2332;font-weight:600">${r.biggestGap}</div></div>`:''}
+      ${r.action?`<div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:4px">RECOMMENDED ACTION</div><div style="font-size:14px;color:${r.verdict==='Solid'?'#2d9d8f':'#c0392b'};font-weight:600">${r.action}</div></div>`:''}
+    </div>`;
+  }
+
+  html+=`<button onclick="document.getElementById('cementAdvisor').value='';document.getElementById('cementClient').value='';document.getElementById('cementTranscript').value='';document.getElementById('cementResults').style.display='none';document.getElementById('cementBtn').disabled=false;window.scrollTo({top:0,behavior:'smooth'})" style="width:100%;padding:13px;background:transparent;border:1px solid #ddd8ce;color:#888;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border-radius:8px;cursor:pointer;margin-top:4px" onmouseover="this.style.borderColor='#1a2332';this.style.color='#1a2332'" onmouseout="this.style.borderColor='#ddd8ce';this.style.color='#888'">↺ CHECK ANOTHER SALE</button>`;
+
+  document.getElementById('cementResults').innerHTML = html;
+  document.getElementById('cementResults').style.display = 'block';
+  document.getElementById('cementBtn').disabled = false;
+  document.getElementById('cementResults').scrollIntoView({behavior:'smooth'});
+}
+
+async function evaluateCall(){
+  const advisor=document.getElementById('advisorName').value.trim();
+  const transcript=document.getElementById('transcript').value.trim();
+  const context=document.getElementById('callContext').value.trim();
+  const caseId=document.getElementById('caseSelect').value;
+  const err=document.getElementById('errorCard');
+  if(!advisor||!transcript){err.classList.add('active');return;}
+  err.classList.remove('active');
+  document.getElementById('evalBtn').disabled=true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('results').style.display='none';
+  document.getElementById('resultsInner').innerHTML='';
+  let idx=0;
+  msgInterval=setInterval(()=>{idx=(idx+1)%loadingMsgs.length;document.getElementById('loadingMsg').textContent=loadingMsgs[idx];},2200);
+
+  // Build previous calls context if this is part of a case
+  let previousCallsContext = '';
+  if(caseId && allCases[caseId] && allCases[caseId].calls && allCases[caseId].calls.length > 0){
+    const c = allCases[caseId];
+    const callNum = c.calls.length + 1;
+    previousCallsContext = `\n\nCASE CONTEXT — THIS IS CALL ${callNum} IN AN ONGOING CLIENT JOURNEY:
+Client: ${c.clientName} | Advisor: ${c.advisorName} | Product: ${c.product}
+
+PREVIOUS CALLS IN THIS CASE:
+${c.calls.map((call, i) => {
+  const r = call.result || {};
+  const pending = [...(r.keyCommitmentsForNextCall||[]), ...(r.pendingItems||[])];
+  const upsellsMissed = (r.upsellOpportunities||[]).filter(u => u.timing !== 'not applicable' && !u.actioned);
+  return `CALL ${i+1} (${r.detectedCallType||'Unknown'} — ${new Date(call.timestamp).toLocaleDateString('en-IE')}):
+  Score: ${r.overallScore}/100 | Outcome: ${r.detectedOutcome||'Unknown'}
+  Commitments made that must be checked: ${pending.join('; ') || 'None recorded'}
+  Upsells spotted but NOT actioned (must follow up): ${upsellsMissed.map(u => u.product).join(', ') || 'None'}
+  Key issues from that call: ${(r.corrections||[]).map(c => c.title).join(', ') || 'None'}
+  Training focus set: ${r.trainingFocus || 'None'}`;
+}).join('\n\n')}
+
+IMPORTANT — EVALUATE THIS CALL IN THE CONTEXT OF THE FULL JOURNEY:
+- Did the advisor follow through on commitments made in previous calls?
+- Were the upsells that were spotted but not actioned previously picked up on this call?
+- Has anything improved since the last call or are the same issues recurring?
+- Credit progress, flag regression, and note what still remains outstanding.
+- Do NOT re-penalise for things already completed in previous calls (e.g. if fact find was done on call 1, do not flag it as missing on call 2).`;
+  }
+
+  try{
+    const saleInstruction = saleOnBoardChecked
+      ? `\n\nSALE ON BOARD — CONFIRMED BY MANAGER: The manager has confirmed a sale was agreed on this call. Cementing is MANDATORY. Evaluate cementing strictly against all 7 elements. If cementing is absent or incomplete, this is a FAIL regardless of everything else. Set cementingVerdict accordingly and flag as high clawback risk if missing.`
+      : '';
+
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,system:SCRIPT_CONTEXT,
+        messages:[{role:"user",content:`Advisor: ${advisor}\n${context?`Context: ${context}\n`:''}${previousCallsContext}${saleInstruction}\n\nTRANSCRIPT:\n${transcript}\n\nDetect call type, product, outcome. Evaluate strictly. Return valid JSON only.`}]})});
+    const data=await resp.json();
+    let raw=data.content.map(i=>i.text||'').join('');
+    let clean=raw.replace(/```json|```/g,'').trim();
+    if(!clean.endsWith('}')){const lb=clean.lastIndexOf('}');if(lb>0)clean=clean.substring(0,lb+1);const o=(clean.match(/\{/g)||[]).length,c=(clean.match(/\}/g)||[]).length;for(let i=0;i<o-c;i++)clean+='}';}
+    const result=JSON.parse(clean);
+    clearInterval(msgInterval);
+    document.getElementById('loading').classList.remove('active');
+    currentResult=result;currentAdvisor=advisor;currentTranscript=transcript;
+    result._saleOnBoardConfirmed = saleOnBoardChecked;
+    renderResults(result,advisor);
+    if(caseId){document.getElementById('saveCallBtn').style.display='flex';}
+  }catch(e){
+    clearInterval(msgInterval);
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('evalBtn').disabled=false;
+    document.getElementById('errorCard').textContent='Something went wrong. Please try again.';
+    document.getElementById('errorCard').classList.add('active');
+    console.error(e);
+  }
+}
+
+function sc(s){return s>=7?'score-high':s>=4?'score-mid':'score-low';}
+function sbc(s){return s>=7?'#4caf7d':s>=4?'#e8c547':'#e05c3a';}
+function oc(s){return s>=70?'#4caf7d':s>=45?'#e8c547':'#e05c3a';}
+function rc(r){return r==='high'?'tag-red':r==='medium'?'tag-yellow':'tag-green';}
+
+function renderResults(r,advisor){
+  const color=oc(r.overallScore);
+  const cv=r.cementingVerdict;
+  const cc=cv==='PASS'?'#4caf7d':cv==='PARTIAL'?'#e8c547':'#e05c3a';
+  let html='';
+
+  html+=`<div class="score-banner">
+    <div class="score-circle" style="border-color:${color}"><div class="score-number" style="color:${color}">${r.overallScore}</div><div class="score-denom">/ 100</div></div>
+    <div class="score-info">
+      <h2>${advisor.toUpperCase()}${r.detectedProduct?' — '+r.detectedProduct.toUpperCase():''}</h2>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        ${r.detectedCallType?`<span style="font-size:11px;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:1px">${r.detectedCallType}</span>`:''}
+        ${r.detectedOutcome?`<span style="font-size:11px;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:4px">${r.detectedOutcome}</span>`:''}
+      </div>
+      <p>${r.verdict||''}</p>
+      <div class="score-tags">
+        ${r._saleOnBoardConfirmed?`<span class="tag tag-yellow">☑ SALE ON BOARD CONFIRMED</span>`:''}
+        ${r.clawbackRisk&&r.clawbackRisk!=='n/a'?`<span class="tag ${rc(r.clawbackRisk)}">CLAWBACK: ${r.clawbackRisk.toUpperCase()}</span>`:''}
+        ${cv&&cv!=='null'?`<span class="tag" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">CEMENTING: ${cv}</span>`:''}
+        ${r.callFlowScore!=null?`<span class="tag tag-yellow">CALL FLOW: ${r.callFlowScore}/10</span>`:''}
+        ${r.saleOnBoard===true?`<span class="tag tag-green">✓ SALE ON BOARD</span>`:''}
+        ${r.saleOnBoard===false?`<span class="tag tag-red">⚠ NOT ON BOARD — UNSIGNED</span>`:''}
+        ${r.docuSignStatus&&r.docuSignStatus!=='not applicable'?`<span class="tag tag-yellow">DOCUSIGN: ${r.docuSignStatus.toUpperCase()}</span>`:''}
+        ${r.standardTermsCelebrated===false?`<span class="tag tag-red">STD TERMS NOT CELEBRATED</span>`:''}
+        ${r.standardTermsCelebrated===true?`<span class="tag tag-green">STD TERMS CELEBRATED ✓</span>`:''}
+      </div>
+    </div>
+  </div>`;
+
+  const sLabels={introduction:'Introduction',preScreening:'Pre-Screen',factFind:'Fact Find',recommendation:'Recommendation',appointmentBooking:'Appointment',cementing:'Cementing'};
+  const valid=Object.entries(sLabels).filter(([k])=>r.sectionScores&&r.sectionScores[k]!=null);
+  if(valid.length){
+    html+=`<div class="result-section-title">SECTION SCORES</div><div class="section-scores" style="grid-template-columns:repeat(${valid.length},1fr)">`;
+    valid.forEach(([k,l])=>{const s=r.sectionScores[k];html+=`<div class="section-score-card" ${k==='appointmentBooking'&&s<=4?'style="border-color:var(--red);background:rgba(224,92,58,.05)"':''}>
+      <div class="sec-name" ${k==='appointmentBooking'?'style="color:var(--text)"':''}>${l}${k==='appointmentBooking'?' 📅':''}</div>
+      <div class="sec-score ${sc(s)}">${s}<span style="font-size:13px;color:var(--muted)">/10</span></div>
+      <div class="sec-bar"><div class="sec-bar-fill" style="width:${s*10}%;background:${sbc(s)}"></div></div>
+    </div>`;});
+    html+='</div>';
+  }
+
+  // APPOINTMENT ALERT — flag prominently if very low
+  const apptScore = r.sectionScores?.appointmentBooking;
+  if(apptScore != null && apptScore <= 4){
+    html+=`<div style="background:rgba(224,92,58,.08);border:1px solid rgba(224,92,58,.3);border-left:3px solid var(--red);border-radius:10px;padding:16px 20px;margin-bottom:16px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--red);margin-bottom:6px">⚠ APPOINTMENT NOT LOCKED IN</div>
+      <div style="font-size:14px;line-height:1.5;color:var(--text)">Every minute not talking to a client is dead commercial time. A vague or missed appointment means clients go cold, competitors get in, and advisors waste time chasing. This must be fixed on every call.</div>
+    </div>`;}
+
+  // DOCUSIGN ALERT — flag if sent with no commitment
+  if(r.docuSignStatus==='sent unsigned'&&r.saleOnBoard===false){
+    html+=`<div style="background:rgba(224,92,58,.08);border:1px solid rgba(224,92,58,.3);border-left:3px solid var(--red);border-radius:10px;padding:16px 20px;margin-bottom:16px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--red);margin-bottom:6px">⚠ DOCUSIGN SENT — NO COMMITMENT TO SIGN OBTAINED</div>
+      <div style="font-size:14px;line-height:1.5;color:var(--text)">Signing off-call is fine — but the advisor must obtain a clear commitment to sign and when. "I'll sign it later" without a specific time is not a commitment.</div>
+    </div>`;}
+
+
+  if(r.cementingChecklist&&cv&&cv!=='null'){
+    const cl=r.cementingChecklist;
+    const items=[
+      ['affordabilityStressTest','Affordability stress-tested ("even in tighter months?")'],
+      ['longTermFraming','Long-term commitment framed (25 years)'],
+      ['cancellationConsequences','Cancellation consequences explained'],
+      ['changesThroughLowQuotes','Changes must come through LowQuotes only'],
+      ['verbalCommitment','Verbal commitment obtained ("are you fully with me?")'],
+      ['clientOwnership','Client owns the decision (not just agreeing)'],
+      ['controlMaintained','Control maintained through activation']
+    ];
+    const passed=items.filter(([k])=>cl[k]).length;
+    html+=`<div class="result-section-title">CEMENTING — ${passed}/7 ELEMENTS</div><div class="monitoring-card" style="border-left:3px solid ${cc}"><div class="monitoring-items">`;
+    items.forEach(([k,l])=>{const ok=cl[k];html+=`<div class="monitoring-item"><span class="m-icon" style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✕'}</span><span class="m-text" style="color:${ok?'var(--text)':'var(--red)'}">${l}</span></div>`;});
+    html+=`<div style="margin-top:12px;padding:10px 14px;background:var(--black);border-radius:6px;font-size:12px;color:var(--muted);border:1px solid var(--border)">Persuasion ≠ Cementing. "I hope you proceed" is not cementing. Behavioural commitment locking is cementing.</div>`;
+    html+='</div></div>';
+  }
+
+  if(r.lifeMilestonesMissed&&r.lifeMilestonesMissed.length){
+    html+=`<div class="result-section-title">⚡ MISSED RAPPORT & URGENCY</div><div class="positives-card" style="border-left-color:var(--accent2)"><ul>`;
+    r.lifeMilestonesMissed.forEach(m=>{html+=`<li style="color:var(--accent2)"><span style="flex-shrink:0;color:var(--accent2)">⚡</span>${m}</li>`;});
+    html+='</ul></div>';
+  }
+
+  if(r.autoEnrolmentFlag&&r.autoEnrolmentFlag.detected){
+    const ae=r.autoEnrolmentFlag;
+    html+=`<div class="result-section-title">AUTO ENROLMENT FLAG</div><div class="monitoring-card" style="border-left:3px solid var(--accent)"><div class="monitoring-items"><div class="monitoring-item"><span class="m-icon">⚠</span><span class="m-text"><strong style="color:var(--accent)">Auto Enrolment Detected</strong>${ae.incomeAbove44k===true?`<span style="color:var(--red);margin-left:8px;font-size:12px">Income above €44k — losing higher rate tax relief</span>`:ae.incomeAbove44k==='unknown'?`<span style="color:var(--muted);margin-left:8px;font-size:12px">Check if income above €44k</span>`:''}${ae.trainingNoteForAdvisor?`<br><span style="font-size:13px;color:var(--muted);font-style:italic">Training: ${ae.trainingNoteForAdvisor}</span>`:''}<br><span style="font-size:13px;color:var(--muted)">→ True Wealth referral: personal pension = 40% vs 20% tax relief.</span></span></div></div></div>`;
+  }
+
+  if(r.upsellOpportunities){
+    const rel=r.upsellOpportunities.filter(u=>u.timing!=='not applicable');
+    if(rel.length){
+      html+=`<div class="result-section-title">UPSELL OPPORTUNITIES</div><div class="monitoring-card"><div class="monitoring-items">`;
+      rel.forEach(u=>{
+        const icon=!u.spotted?'⚪':u.actioned&&u.timing.includes('correct')?'🟢':u.spotted&&!u.actioned?'🟡':'🔴';
+        const c=!u.spotted?'var(--muted)':u.actioned&&u.timing.includes('correct')?'var(--green)':u.spotted&&!u.actioned?'var(--accent)':'var(--red)';
+        html+=`<div class="monitoring-item"><span class="m-icon">${icon}</span><span class="m-text"><strong style="color:${c}">${u.product}</strong><span style="color:var(--muted);font-size:11px;margin-left:8px">${u.timing}</span>${u.note?`<br><span style="font-size:13px;color:var(--muted)">${u.note}</span>`:''}</span></div>`;
+      });
+      html+=`</div><div style="margin-top:10px;padding:8px 12px;background:var(--black);border-radius:6px;font-size:11px;color:var(--muted)">🟢 Actioned correctly &nbsp;|&nbsp; 🟡 Spotted, not actioned &nbsp;|&nbsp; ⚪ Missed &nbsp;|&nbsp; 🔴 Wrong timing</div></div>`;
+    }
+  }
+
+  if(r.factFindGaps&&r.factFindGaps.length){
+    html+=`<div class="result-section-title">FACT FIND GAPS</div><div class="positives-card" style="border-left-color:var(--accent)"><ul>`;
+    r.factFindGaps.forEach(g=>{html+=`<li style="color:var(--accent)"><span style="flex-shrink:0;color:var(--accent)">⚠</span>${g}</li>`;});
+    html+='</ul></div>';
+  }
+
+  const pending=[...(r.keyCommitmentsForNextCall||[]),...(r.pendingItems||[])];
+  if(pending.length){
+    html+=`<div class="result-section-title">📋 PENDING — MUST FOLLOW UP NEXT CALL</div><div class="monitoring-card" style="border-left:3px solid var(--accent2)"><div class="monitoring-items">`;
+    pending.forEach(p=>{html+=`<div class="monitoring-item"><span class="m-icon" style="color:var(--accent2)">→</span><span class="m-text">${p}</span></div>`;});
+    html+='</div></div>';
+  }
+
+  if(r.positives&&r.positives.length){
+    html+=`<div class="result-section-title">WHAT WAS DONE WELL</div><div class="positives-card"><ul>`;
+    r.positives.forEach(p=>{html+=`<li>${p}</li>`;});
+    html+='</ul></div>';
+  }
+
+  if(r.corrections&&r.corrections.length){
+    html+=`<div class="result-section-title">CORRECTIONS</div>`;
+    r.corrections.forEach((c,i)=>{
+      html+=`<div class="correction-card priority-${c.priority}">
+        <div class="correction-header"><div class="correction-number">${i+1}</div><div class="correction-title">${c.title}</div><span class="priority-badge badge-${c.priority}">${c.priority.toUpperCase()}</span></div>
+        <div class="step"><div class="step-icon moment">⏱</div><div><div class="step-label">Moment</div><div class="step-text">${c.moment}</div></div></div>
+        <div class="step"><div class="step-icon wrong">✕</div><div><div class="step-label">What Went Wrong</div><div class="step-text">${c.whatWentWrong}</div></div></div>
+        <div class="step"><div class="step-icon right">✓</div><div><div class="step-label">Correct Approach</div><div class="step-text">${c.correctApproach}</div>${c.scriptLine?`<div class="script-line">"${c.scriptLine}"</div>`:''}</div></div>
+      </div>`;
+    });
+  }
+
+  if(r.monitoringPlan&&r.monitoringPlan.length){
+    html+=`<div class="result-section-title">MONITORING PLAN</div><div class="monitoring-card"><div class="monitoring-items">`;
+    ['📞','📋','✅'].forEach((ic,i)=>{if(r.monitoringPlan[i])html+=`<div class="monitoring-item"><span class="m-icon">${ic}</span><span class="m-text">${r.monitoringPlan[i]}</span></div>`;});
+    if(r.trainingFocus)html+=`<div style="margin-top:14px;padding:12px 14px;background:rgba(232,197,71,.08);border:1px solid rgba(232,197,71,.2);border-radius:8px"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:5px">ONE THING TO FIX FIRST</div><div style="font-size:14px">${r.trainingFocus}</div></div>`;
+    html+='</div></div>';
+  }
+
+  document.getElementById('resultsInner').innerHTML=html;
+  document.getElementById('results').style.display='block';
+  document.getElementById('evalBtn').disabled=false;
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+// CASES
+async function loadCases(){
+  document.getElementById('casesLoading').style.display='block';
+  document.getElementById('casesList').innerHTML='';
+  try{
+    const keys=await window.storage.list('case:',true);
+    allCases={};
+    if(keys&&keys.keys&&keys.keys.length){
+      for(const k of keys.keys){try{const r=await window.storage.get(k,true);if(r)allCases[k]=JSON.parse(r.value);}catch(e){}}
+    }
+  }catch(e){allCases={};}
+  document.getElementById('casesLoading').style.display='none';
+  renderCasesList();populateCaseDropdown();
+}
+
+function renderCasesList(){
+  const el=document.getElementById('casesList');
+  const cases=Object.entries(allCases).sort((a,b)=>b[1].updatedAt-a[1].updatedAt);
+  if(!cases.length){el.innerHTML=`<div style="text-align:center;padding:60px;color:var(--muted);font-size:14px;background:var(--card);border-radius:10px;border:1px solid var(--border)">No cases yet. Create one above to track a client's full journey across multiple calls.</div>`;return;}
+  el.innerHTML=cases.map(([id,c])=>{
+    const calls=c.calls||[];
+    const avg=calls.length?Math.round(calls.reduce((s,c)=>s+(c.result?.overallScore||0),0)/calls.length):null;
+    const color=avg?oc(avg):'var(--muted)';
+    const initials=(c.clientName||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="case-card" onclick="openCase('${id}')">
+      <div class="case-avatar">${initials}</div>
+      <div class="case-info"><div class="case-name">${c.clientName}</div><div class="case-meta">${c.advisorName} · ${c.product||'Life'} · ${calls.length} call${calls.length!==1?'s':''}</div></div>
+      <div style="text-align:right">
+        ${avg?`<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${color}">${avg}<span style="font-size:13px;color:var(--muted)">/100</span></div>`:'<div style="color:var(--muted);font-size:12px">No calls</div>'}
+        <div style="font-size:11px;color:var(--muted)">${new Date(c.updatedAt).toLocaleDateString('en-IE')}</div>
+        <button class="btn-danger" style="margin-top:6px" onclick="deleteCase('${id}',event)">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateCaseDropdown(){
+  const sel=document.getElementById('caseSelect');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Standalone evaluation —</option>';
+  Object.entries(allCases).sort((a,b)=>b[1].updatedAt-a[1].updatedAt).forEach(([id,c])=>{
+    const o=document.createElement('option');o.value=id;o.textContent=`${c.clientName} (${c.advisorName})`;
+    if(id===cur)o.selected=true;sel.appendChild(o);
+  });
+}
+
+async function createCase(){
+  const client=document.getElementById('newClientName').value.trim();
+  const advisor=document.getElementById('newAdvisorName').value.trim();
+  const product=document.getElementById('newProduct').value.trim();
+  if(!client||!advisor){alert('Please enter client name and advisor.');return;}
+  const id='case:'+Date.now();
+  const c={id,clientName:client,advisorName:advisor,product:product||'Life Insurance',calls:[],createdAt:Date.now(),updatedAt:Date.now()};
+  try{
+    await window.storage.set(id,JSON.stringify(c),true);
+    allCases[id]=c;
+    document.getElementById('newClientName').value='';
+    document.getElementById('newAdvisorName').value='';
+    document.getElementById('newProduct').value='';
+    renderCasesList();populateCaseDropdown();
+  }catch(e){alert('Failed to save case.');}
+}
+
+async function saveCallToCase(){
+  if(!currentResult)return;
+  const caseId=document.getElementById('caseSelect').value;
+  if(!caseId){alert('Please select a case from the dropdown.');return;}
+  const c=allCases[caseId];if(!c)return;
+  const callNum=(c.calls||[]).length+1;
+  const call={num:callNum,timestamp:Date.now(),advisor:currentAdvisor,transcript:currentTranscript,result:currentResult};
+  c.calls=c.calls||[];c.calls.push(call);c.updatedAt=Date.now();
+  try{
+    await window.storage.set(caseId,JSON.stringify(c),true);
+    allCases[caseId]=c;
+    const btn=document.getElementById('saveCallBtn');
+    btn.textContent='✓ Saved';btn.disabled=true;
+    setTimeout(()=>{btn.textContent='💾 Save to Case';btn.disabled=false;},2000);
+  }catch(e){alert('Failed to save call.');}
+}
+
+function openCase(id){
+  currentCaseId=id;
+  const c=allCases[id];
+  document.getElementById('casesList').style.display='none';
+  document.getElementById('createCaseRow').style.display='none';
+  document.getElementById('casesLoading').style.display='none';
+  document.getElementById('caseDetail').style.display='block';
+  document.getElementById('caseDetailTitle').textContent=`${c.clientName} — ${c.advisorName}`;
+  renderCaseCallsList(c);
+}
+
+function renderCaseCallsList(c){
+  const calls=c.calls||[];
+  const avg=calls.length?Math.round(calls.reduce((s,c)=>s+(c.result?.overallScore||0),0)/calls.length):null;
+  let html=`<div class="panel" style="margin-bottom:20px"><div class="panel-label">CASE OVERVIEW</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="text-align:center;padding:14px;background:var(--black);border-radius:8px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Calls</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent)">${calls.length}</div></div>
+      <div style="text-align:center;padding:14px;background:var(--black);border-radius:8px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Avg Score</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${avg?oc(avg):'var(--muted)'}">${avg||'—'}</div></div>
+      <div style="text-align:center;padding:14px;background:var(--black);border-radius:8px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Product</div><div style="font-size:13px;font-weight:600;padding-top:4px">${c.product}</div></div>
+    </div></div>`;
+
+  if(calls.length){
+    html+=`<div class="panel-label" style="margin-bottom:14px">CALLS IN THIS CASE</div>`;
+    calls.forEach((call,i)=>{
+      const r=call.result||{};
+      const color=oc(r.overallScore||0);
+      const cv=r.cementingVerdict;
+      html+=`<div class="call-item" onclick="viewCallResult(${i})">
+        <div class="call-num">${call.num}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${r.detectedCallType||'Call'} — ${r.detectedProduct||''}</div>
+          <div style="font-size:12px;color:var(--muted)">${new Date(call.timestamp).toLocaleDateString('en-IE')} · ${r.detectedOutcome||''}</div>
+          ${cv&&cv!=='null'?`<span style="font-size:11px;background:${cv==='PASS'?'rgba(76,175,125,.2)':cv==='PARTIAL'?'rgba(232,197,71,.2)':'rgba(224,92,58,.2)'};color:${cv==='PASS'?'var(--green)':cv==='PARTIAL'?'var(--accent)':'var(--red)'};padding:2px 8px;border-radius:4px">Cementing: ${cv}</span>`:''}
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${color}">${r.overallScore||'—'}</div>
+      </div>`;
+    });
+  } else {
+    html+=`<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;background:var(--card);border-radius:10px;border:1px solid var(--border)">No calls saved yet. Evaluate a call and select this case to add it.</div>`;
+  }
+
+  document.getElementById('caseCallsList').innerHTML=html;
+}
+
+function viewCallResult(idx){
+  const c=allCases[currentCaseId];
+  if(!c||!c.calls[idx])return;
+  const call=c.calls[idx];
+  switchTab('evaluate');
+  currentResult=call.result;currentAdvisor=call.advisor;currentTranscript=call.transcript;
+  document.getElementById('advisorName').value=call.advisor||'';
+  renderResults(call.result,call.advisor);
+  document.getElementById('saveCallBtn').style.display='none';
+}
+
+function closeCaseDetail(){
+  currentCaseId=null;
+  document.getElementById('caseDetail').style.display='none';
+  document.getElementById('casesList').style.display='block';
+  document.getElementById('createCaseRow').style.display='flex';
+  document.getElementById('caseReportSection').style.display='none';
+  document.getElementById('caseReportContent').innerHTML='';
+}
+
+async function deleteCase(id,e){
+  e.stopPropagation();
+  if(!confirm('Delete this case and all its calls?'))return;
+  try{await window.storage.delete(id,true);delete allCases[id];renderCasesList();populateCaseDropdown();}catch(e){alert('Failed to delete.');}
+}
+
+async function generateCaseReport(){
+  const c=allCases[currentCaseId];
+  if(!c||!c.calls||!c.calls.length){alert('No calls in this case yet.');return;}
+  document.getElementById('caseReportSection').style.display='block';
+  document.getElementById('reportLoading').classList.add('active');
+  document.getElementById('caseReportContent').innerHTML='';
+  document.getElementById('reportBtn').disabled=true;
+
+  const callSummaries=c.calls.map((call,i)=>{
+    const r=call.result||{};
+    const pending=[...(r.keyCommitmentsForNextCall||[]),...(r.pendingItems||[])];
+    const upsells=(r.upsellOpportunities||[]).filter(u=>u.timing!=='not applicable'&&!u.actioned&&u.spotted);
+    return `CALL ${i+1} (${r.detectedCallType||'Unknown'} — ${new Date(call.timestamp).toLocaleDateString('en-IE')}):
+Score: ${r.overallScore}/100 | Cementing: ${r.cementingVerdict||'N/A'} | Clawback: ${r.clawbackRisk||'N/A'}
+Outcome: ${r.detectedOutcome||'Unknown'}
+Commitments made: ${pending.join('; ')||'None'}
+Upsells spotted but not actioned: ${upsells.map(u=>u.product).join(', ')||'None'}
+Key issues: ${(r.corrections||[]).map(c=>`${c.title} (${c.priority})`).join('; ')||'None'}`;
+  }).join('\n\n');
+
+  const prompt=`You are a senior sales coach reviewing a complete multi-call client journey at LowQuotes.
+CLIENT: ${c.clientName} | ADVISOR: ${c.advisorName} | PRODUCT: ${c.product} | TOTAL CALLS: ${c.calls.length}
+
+CALL SUMMARIES:
+${callSummaries}
+
+Produce a cross-call case report. Assess: did advisor follow through on commitments from previous calls? Were upsells actioned? Was second life health app completed? Was the sale properly cemented? What is the overall advisor rating and key coaching point?
+
+Return ONLY valid JSON:
+{
+  "caseVerdict": "<max 25 words>",
+  "overallAdvisorRating": <0-100>,
+  "commitmentFollowThrough": "<STRONG|PARTIAL|WEAK|N/A>",
+  "upsellFollowThrough": "<STRONG|PARTIAL|WEAK|N/A>",
+  "secondLifeCompleted": <true|false|null>,
+  "saleCemented": "<PASS|PARTIAL|FAIL|N/A>",
+  "crossCallFindings": [{"type": "<FOLLOWED_THROUGH|MISSED|IMPROVED|DECLINED>", "finding": "<max 25 words>"}],
+  "progressAcrossCalls": "<max 40 words>",
+  "keyCoachingPoint": "<max 20 words>",
+  "recommendedNextStep": "<max 20 words>"
+}`;
+
+  try{
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
+    const data=await resp.json();
+    let raw=data.content.map(i=>i.text||'').join('');
+    const report=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    document.getElementById('reportLoading').classList.remove('active');
+    renderCaseReport(report,c);
+  }catch(e){
+    document.getElementById('reportLoading').classList.remove('active');
+    document.getElementById('caseReportContent').innerHTML=`<div class="error-card active">Failed to generate report. Please try again.</div>`;
+    console.error(e);
+  }
+  document.getElementById('reportBtn').disabled=false;
+}
+
+function stColor(s){return s==='STRONG'||s===true?'var(--green)':s==='PARTIAL'?'var(--accent)':s==='WEAK'||s===false?'var(--red)':'var(--muted)';}
+function stLabel(s){return s==='STRONG'?'✓ STRONG':s==='PARTIAL'?'◑ PARTIAL':s==='WEAK'?'✕ WEAK':s===true?'✓ COMPLETE':s===false?'✕ INCOMPLETE':'— N/A';}
+
+function renderCaseReport(r,c){
+  const rColor=oc(r.overallAdvisorRating||0);
+  let html=`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px">
+      <div class="score-circle" style="border-color:${rColor}"><div class="score-number" style="color:${rColor}">${r.overallAdvisorRating}</div><div class="score-denom">/ 100</div></div>
+      <div style="flex:1;min-width:180px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">CASE REPORT — ${c.clientName.toUpperCase()}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${c.advisorName} · ${c.calls.length} calls · ${c.product}</div>
+        <p style="color:var(--muted);font-size:14px">${r.caseVerdict||''}</p>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+      ${[['Commitment Follow-Through',r.commitmentFollowThrough],['Upsell Follow-Through',r.upsellFollowThrough],['2nd Life Health App',r.secondLifeCompleted],['Sale Cemented',r.saleCemented]].map(([l,v])=>`<div style="text-align:center;padding:12px;background:var(--black);border-radius:8px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">${l}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:${stColor(v)}">${stLabel(v)}</div></div>`).join('')}
+    </div>
+  </div>`;
+
+  if(r.crossCallFindings&&r.crossCallFindings.length){
+    html+=`<div class="result-section-title">CROSS-CALL FINDINGS</div>`;
+    r.crossCallFindings.forEach(f=>{
+      const fc=f.type==='FOLLOWED_THROUGH'||f.type==='IMPROVED'?'var(--green)':f.type==='MISSED'||f.type==='DECLINED'?'var(--red)':'var(--accent)';
+      const fi=f.type==='FOLLOWED_THROUGH'?'✓':f.type==='IMPROVED'?'↑':f.type==='MISSED'?'✕':'→';
+      html+=`<div class="cross-call-card" style="border-left-color:${fc}"><div style="display:flex;gap:12px;align-items:flex-start"><span style="color:${fc};font-weight:700;font-size:16px;flex-shrink:0">${fi}</span><span style="font-size:14px;line-height:1.5">${f.finding}</span></div></div>`;
+    });
+  }
+
+  if(r.progressAcrossCalls){
+    html+=`<div class="result-section-title">CALL JOURNEY</div><div class="monitoring-card"><p style="font-size:14px;line-height:1.6">${r.progressAcrossCalls}</p></div>`;
+  }
+
+  html+=`<div class="result-section-title">KEY COACHING POINT</div>
+  <div style="background:rgba(232,197,71,.06);border:1px solid rgba(232,197,71,.25);border-left:3px solid var(--accent);border-radius:10px;padding:18px 22px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:600;margin-bottom:6px">${r.keyCoachingPoint||''}</div>
+    ${r.recommendedNextStep?`<div style="font-size:13px;color:var(--muted)">Next step: ${r.recommendedNextStep}</div>`:''}
+  </div>`;
+
+  document.getElementById('caseReportContent').innerHTML=html;
+  document.getElementById('caseReportSection').scrollIntoView({behavior:'smooth'});
+}
+
+// EMAIL
+async function generateEmail(){
+  const r=currentResult;const advisor=currentAdvisor;
+  if(!r||!advisor)return;
+  document.getElementById('emailModal').style.display='block';
+  document.getElementById('emailLoading').style.display='block';
+  document.getElementById('emailContent').style.display='none';
+  document.getElementById('emailBtn').disabled=true;
+  const sLabels={introduction:'Introduction',preScreening:'Pre-Screening',factFind:'Fact Find',recommendation:'Recommendation',appointmentBooking:'Appointment Booking',cementing:'Cementing'};
+  const scored=Object.entries(sLabels).filter(([k])=>r.sectionScores&&r.sectionScores[k]!=null).map(([k,l])=>`${l}: ${r.sectionScores[k]}/10`);
+  const prompt=`You are Phil, sales manager at LowQuotes. Write a coaching email to an advisor based on this call evaluation.
+TONE: Coaching-focused but firm. Acknowledge positives first. Address issues directly. Natural paragraphs — no bullet points. Professional and constructive.
+CRITICAL: First sentence must identify the specific call. Extract client name from transcript excerpt.
+ADVISOR: ${advisor} | CALL TYPE: ${r.detectedCallType||''} | PRODUCT: ${r.detectedProduct||''} | OUTCOME: ${r.detectedOutcome||''} | SCORE: ${r.overallScore}/100 | CLAWBACK: ${r.clawbackRisk||''}
+${r.cementingVerdict&&r.cementingVerdict!=='null'?`CEMENTING: ${r.cementingVerdict}`:''}
+SCORES: ${scored.join(' | ')}
+POSITIVES: ${(r.positives||[]).join('; ')}
+${r.factFindGaps&&r.factFindGaps.length?`FACT FIND GAPS: ${r.factFindGaps.join('; ')}`:''}
+${r.lifeMilestonesMissed&&r.lifeMilestonesMissed.length?`MISSED MOMENTS: ${r.lifeMilestonesMissed.join('; ')}`:''}
+ISSUES: ${(r.corrections||[]).map((c,i)=>`${i+1}. ${c.title}: ${c.whatWentWrong}`).join(' | ')}
+TRAINING FOCUS: ${r.trainingFocus||''}
+TRANSCRIPT EXCERPT: ${currentTranscript?currentTranscript.substring(0,800):'Not available'}
+End with "My Follow-Up" section: Phil commits to specific review action — what he will listen for, how many calls, by when.
+Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<paragraphs separated by \\n\\n, signed Phil, ending with My Follow-Up>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
+  try{
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
+    const data=await resp.json();
+    const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    document.getElementById('emailTo').textContent=email.to;
+    document.getElementById('emailSubject').textContent=email.subject;
+    document.getElementById('emailBody').value=email.body;
+    if(email.followUpAction){document.getElementById('followUpText').textContent=email.followUpAction;document.getElementById('followUpBlock').style.display='block';}
+    document.getElementById('emailLoading').style.display='none';
+    document.getElementById('emailContent').style.display='block';
+  }catch(e){
+    document.getElementById('emailLoading').style.display='none';
+    document.getElementById('emailContent').innerHTML='<p style="color:var(--red);padding:20px">Failed to generate email. Please try again.</p>';
+    document.getElementById('emailContent').style.display='block';
+    console.error(e);
+  }
+  document.getElementById('emailBtn').disabled=false;
+}
+
+function closeEmailModal(){
+  document.getElementById('emailModal').style.display='none';
+  document.getElementById('followUpBlock').style.display='none';
+  document.getElementById('emailContent').style.display='none';
+  document.getElementById('emailLoading').style.display='none';
+}
+
+function copyEmail(){
+  const subject=document.getElementById('emailSubject').textContent;
+  const body=document.getElementById('emailBody').value;
+  fallbackCopy(`Subject: ${subject}\n\n${body}`,document.getElementById('copyEmailBtn'));
+}
+
+function copyReport(){
+  const r=currentResult;if(!r)return;
+  let t=`LOWQUOTES CALL EVALUATION — ${(currentAdvisor||'').toUpperCase()}\n${'='.repeat(50)}\n`;
+  if(r.detectedCallType)t+=`CALL TYPE: ${r.detectedCallType}\n`;
+  if(r.detectedProduct)t+=`PRODUCT: ${r.detectedProduct}\n`;
+  if(r.detectedOutcome)t+=`OUTCOME: ${r.detectedOutcome}\n`;
+  t+=`SCORE: ${r.overallScore}/100 | CLAWBACK: ${r.clawbackRisk||'N/A'}`;
+  if(r.cementingVerdict&&r.cementingVerdict!=='null')t+=` | CEMENTING: ${r.cementingVerdict}`;
+  t+=`\nVERDICT: ${r.verdict}\n`;
+  const sL={introduction:'Introduction',preScreening:'Pre-Screening',factFind:'Fact Find',recommendation:'Recommendation',appointmentBooking:'Appointment Booking',cementing:'Cementing'};
+  const scored=Object.entries(sL).filter(([k])=>r.sectionScores&&r.sectionScores[k]!=null);
+  if(scored.length){t+=`\nSECTION SCORES:\n`;scored.forEach(([k,l])=>{t+=`  ${l}: ${r.sectionScores[k]}/10\n`;});}
+  if(r.lifeMilestonesMissed&&r.lifeMilestonesMissed.length){t+=`\nMISSED MOMENTS:\n`;r.lifeMilestonesMissed.forEach(m=>{t+=`  ⚡ ${m}\n`;});}
+  if(r.factFindGaps&&r.factFindGaps.length){t+=`\nFACT FIND GAPS:\n`;r.factFindGaps.forEach(g=>{t+=`  ⚠ ${g}\n`;});}
+  const pending=[...(r.keyCommitmentsForNextCall||[]),...(r.pendingItems||[])];
+  if(pending.length){t+=`\nPENDING ITEMS:\n`;pending.forEach(p=>{t+=`  → ${p}\n`;});}
+  if(r.positives&&r.positives.length){t+=`\nPOSITIVES:\n`;r.positives.forEach(p=>{t+=`  ✓ ${p}\n`;});}
+  if(r.corrections&&r.corrections.length){t+=`\nCORRECTIONS:\n`;r.corrections.forEach((c,i)=>{t+=`\n${i+1}. [${c.priority.toUpperCase()}] ${c.title}\n   ${c.whatWentWrong}\n   Fix: ${c.correctApproach}\n`;if(c.scriptLine)t+=`   Script: "${c.scriptLine}"\n`;});}
+  if(r.trainingFocus)t+=`\nTRAINING FOCUS: ${r.trainingFocus}\n`;
+  fallbackCopy(t,document.querySelector('.btn-copy'));
+}
+
+function fallbackCopy(text,btn){
+  const orig=btn?btn.textContent:'';
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{if(btn){btn.textContent='✓ Copied';setTimeout(()=>{btn.textContent=orig;},2000);}}).catch(()=>execCopy(text,btn,orig));
+  }else{execCopy(text,btn,orig);}
+}
+function execCopy(text,btn,orig){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');if(btn){btn.textContent='✓ Copied';setTimeout(()=>{btn.textContent=orig||btn.textContent;},2000);}}catch(e){if(btn)btn.textContent='✕ Copy failed';}
+  document.body.removeChild(ta);
+}
+
+let saleOnBoardChecked = false;
+
+function toggleSaleOnBoard() {
+  saleOnBoardChecked = !saleOnBoardChecked;
+  const box = document.getElementById('saleCheckbox');
+  const row = document.getElementById('saleCheckRow');
+  if(saleOnBoardChecked) {
+    box.style.background = 'var(--accent)';
+    box.style.borderColor = 'var(--accent)';
+    box.innerHTML = '<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="#0a0a0a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    row.style.borderColor = 'var(--accent)';
+    row.style.background = 'rgba(232,197,71,0.05)';
+  } else {
+    box.style.background = 'transparent';
+    box.style.borderColor = 'var(--border)';
+    box.innerHTML = '';
+    row.style.borderColor = 'var(--border)';
+    row.style.background = 'var(--black)';
+  }
+}
+
+function resetForm(){
+  ['advisorName','callContext','transcript'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('errorCard').classList.remove('active');
+  document.getElementById('results').style.display='none';
+  document.getElementById('loading').classList.remove('active');
+  document.getElementById('resultsInner').innerHTML='';
+  document.getElementById('evalBtn').disabled=false;
+  document.getElementById('saveCallBtn').style.display='none';
+  // Reset sale on board checkbox
+  saleOnBoardChecked = false;
+  const box = document.getElementById('saleCheckbox');
+  const row = document.getElementById('saleCheckRow');
+  box.style.background='transparent'; box.style.borderColor='var(--border)'; box.innerHTML='';
+  row.style.borderColor='var(--border)'; row.style.background='var(--black)';
+  currentResult=null;currentAdvisor=null;currentTranscript=null;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  loadCases();
+  document.getElementById('caseSelect').addEventListener('change', function(){
+    const caseId = this.value;
+    const banner = document.getElementById('caseContextBanner');
+    const bannerText = document.getElementById('caseContextText');
+    if(caseId && allCases[caseId]){
+      const c = allCases[caseId];
+      const calls = c.calls || [];
+      if(calls.length > 0){
+        const pending = calls.flatMap(call => [...(call.result?.keyCommitmentsForNextCall||[]), ...(call.result?.pendingItems||[])]);
+        const upsellsMissed = calls.flatMap(call => (call.result?.upsellOpportunities||[]).filter(u => u.timing !== 'not applicable' && !u.actioned).map(u => u.product));
+        bannerText.textContent = `Case loaded: ${c.clientName} (${calls.length} previous call${calls.length!==1?'s':''}). Previous commitments and ${upsellsMissed.length} unactioned upsell${upsellsMissed.length!==1?'s':''} will be checked on this call.`;
+        banner.style.display = 'block';
+      } else {
+        bannerText.textContent = `Case loaded: ${c.clientName} — no previous calls yet. This will be Call 1.`;
+        banner.style.display = 'block';
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  });
+});
+</script>
+</body>
+</html>
