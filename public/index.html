@@ -535,7 +535,7 @@ Return ONLY valid JSON, no markdown, no preamble:
 {"verdict":"<Solid|Watch|At Risk|High Risk>","score":<0-7>,"headline":"<blunt one sentence max 20 words>","clawbackRisk":"<low|medium|high|critical>","elements":{"affordabilityStressTest":{"pass":<bool>,"note":"<max 15 words>"},"longTermFraming":{"pass":<bool>,"note":"<max 15 words>"},"cancellationConsequences":{"pass":<bool>,"note":"<max 15 words>"},"changesThroughLowQuotes":{"pass":<bool>,"note":"<max 15 words>"},"verbalCommitment":{"pass":<bool>,"note":"<max 15 words>"},"clientOwnership":{"pass":<bool>,"note":"<max 15 words>"},"controlMaintained":{"pass":<bool>,"note":"<max 15 words>"}},"biggestGap":"<max 20 words>","action":"<none needed|coaching note recommended|re-cement call required, max 20 words>"}`;
 
   try{
-    const resp = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    const resp = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
         system: CEMENT_SYSTEM,
         messages:[{role:"user",content:`Advisor: ${advisor}\nClient: ${client||'Not specified'}\n\nTRANSCRIPT:\n${transcript}\n\nEvaluate cementing only. Return valid JSON only.`}]})});
@@ -705,7 +705,7 @@ IMPORTANT — EVALUATE THIS CALL IN THE CONTEXT OF THE FULL JOURNEY:
       ? `\n\nSALE ON BOARD — CONFIRMED BY MANAGER: The manager has confirmed a sale was agreed on this call. Cementing is MANDATORY. Evaluate cementing strictly against all 7 elements. If cementing is absent or incomplete, this is a FAIL regardless of everything else. Set cementingVerdict accordingly and flag as high clawback risk if missing.`
       : '';
 
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,system:SCRIPT_CONTEXT,
         messages:[{role:"user",content:`Advisor: ${advisor}\n${context?`Context: ${context}\n`:''}${previousCallsContext}${saleInstruction}\n\nTRANSCRIPT:\n${transcript}\n\nDetect call type, product, outcome. Evaluate strictly. Return valid JSON only.`}]})});
     const data=await resp.json();
@@ -1070,7 +1070,7 @@ Return ONLY valid JSON:
 }`;
 
   try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     let raw=data.content.map(i=>i.text||'').join('');
@@ -1152,7 +1152,7 @@ TRANSCRIPT EXCERPT: ${currentTranscript?currentTranscript.substring(0,800):'Not 
 End with "My Follow-Up" section: Phil commits to specific review action — what he will listen for, how many calls, by when.
 Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<paragraphs separated by \\n\\n, signed Phil, ending with My Follow-Up>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
