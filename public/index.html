@@ -390,6 +390,8 @@ CREDIT if: Client committed clearly to sign immediately after the call, or signe
 8. CEMENTING — required whenever a sale is AGREED, whether DocuSign is signed or not:
 If a sale was agreed on this call, cementing is MANDATORY. Do not wait for DocuSign to be signed before cementing — cement first, then send DocuSign. A properly cemented client will sign. An uncemented client may not.
 
+CRITICAL EVALUATION RULE: Advisors naturally combine multiple cement elements in the same sentence or exchange. You MUST evaluate each element independently. If a single sentence covers affordability AND long-term framing AND cancellation consequences, credit ALL THREE. Never fail an element just because it was delivered alongside another element. Scan the entire transcript for evidence of each element separately.
+
 ALL 7 ELEMENTS REQUIRED:
 1. AFFORDABILITY STRESS TEST: "Are you comfortable paying this even in tighter months? I need your assurance on this before we proceed." Single most important lock-in. Absent = FAIL.
 2. LONG-TERM COMMITMENT FRAMING: The policy must be framed as a long-term commitment. The advisor should state the actual policy term (e.g. 15 years, 20 years, 25 years, 35 years, "until retirement" — whatever applies to this client). CREDIT the advisor for stating the correct specific term. Do NOT penalise for saying "15 years" instead of "25 years" — the term is variable and depends on the product. What matters is that a specific term was stated and the long-term nature was emphasised. IMPORTANT: Long-term framing often happens WITHIN the affordability conversation — e.g. "the mortgage protection is lasting 35 years, are you comfortable with the premium?" This STILL counts as a pass for long-term framing. Evaluate each element independently even when delivered together in the same sentence.
@@ -517,6 +519,8 @@ async function runCementCheck(){
   const cementInterval=setInterval(()=>{idx=(idx+1)%cementLoadMsgs.length;document.getElementById('cementLoadMsg').textContent=cementLoadMsgs[idx];},2000);
 
   const CEMENT_SYSTEM = `You are a senior sales coach at LowQuotes assessing cement quality on a completed sale. Evaluate the transcript ONLY for cementing. Ignore everything else.
+
+CRITICAL EVALUATION RULE: Advisors naturally combine multiple cement elements in the same sentence or exchange. Evaluate each element INDEPENDENTLY. If one sentence covers multiple elements, credit ALL of them. Never fail an element because it was delivered alongside another. Scan the entire transcript for evidence of each element separately.
 
 THE 7-ELEMENT CEMENTING FRAMEWORK:
 1. AFFORDABILITY STRESS TEST: Client asked if comfortable paying even in tighter months. Most critical.
