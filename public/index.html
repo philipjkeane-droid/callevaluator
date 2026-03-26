@@ -176,7 +176,7 @@ textarea::placeholder{color:var(--muted);}
     <div id="resultsInner"></div>
     <div class="btn-row" style="margin-top:20px">
       <button class="btn-copy" onclick="copyReport()">⎘ Copy Report</button>
-      <button class="btn-accent" id="emailBtn" onclick="generateEmail()">✉ Draft Email</button>
+      <button class="btn-accent" id="emailBtn" onclick="generateEmail()">✉ Summary Email to Advisor</button>
       <button class="btn-accent" id="saveCallBtn" onclick="saveCallToCase()" style="display:none">💾 Save to Case</button>
     </div>
   </div>
@@ -1075,7 +1075,7 @@ Return ONLY valid JSON:
 
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     let raw=data.content.map(i=>i.text||'').join('');
     const report=JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -1141,23 +1141,34 @@ async function generateEmail(){
   document.getElementById('emailBtn').disabled=true;
   const sLabels={introduction:'Introduction',preScreening:'Pre-Screening',factFind:'Fact Find',recommendation:'Recommendation',appointmentBooking:'Appointment Booking',cementing:'Cementing'};
   const scored=Object.entries(sLabels).filter(([k])=>r.sectionScores&&r.sectionScores[k]!=null).map(([k,l])=>`${l}: ${r.sectionScores[k]}/10`);
-  const prompt=`You are Phil, sales manager at LowQuotes. Write a coaching email to an advisor based on this call evaluation.
-TONE: Coaching-focused but firm. Acknowledge positives first. Address issues directly. Natural paragraphs — no bullet points. Professional and constructive.
-CRITICAL: First sentence must identify the specific call. Extract client name from transcript excerpt.
+  const prompt=`You are Phil, sales manager at LowQuotes. Write a summary coaching email to an advisor based on this call evaluation.
+
+STRUCTURE (use these exact section headings):
+1. Opening — identify the specific call (client name, product, date if available). One sentence setting the tone.
+2. "What You Did Well" — 2-4 things the advisor did well. For EACH positive, include a short direct quote from the transcript showing the moment (in italics using *quote*). Explain WHY it was effective.
+3. "Areas for Improvement" — 2-4 things that need work. For EACH issue, include a short direct quote from the transcript (or describe the specific moment where it was missing) showing the gap. Explain what should have been said or done instead, with a concrete example.
+4. "Key Takeaway" — one sentence summary of the single biggest thing to focus on for next call.
+5. "My Follow-Up" — Phil commits to a specific review action: what he will listen for, how many calls, by when.
+
+TONE: Coaching-focused but firm. Lead with positives. Address issues directly and constructively. Use natural paragraphs. Professional.
+CRITICAL: Extract client name from the transcript. The transcript quotes must be REAL extracts from the transcript provided — never fabricate quotes.
+
 ADVISOR: ${advisor} | CALL TYPE: ${r.detectedCallType||''} | PRODUCT: ${r.detectedProduct||''} | OUTCOME: ${r.detectedOutcome||''} | SCORE: ${r.overallScore}/100 | CLAWBACK: ${r.clawbackRisk||''}
 ${r.cementingVerdict&&r.cementingVerdict!=='null'?`CEMENTING: ${r.cementingVerdict}`:''}
 SCORES: ${scored.join(' | ')}
 POSITIVES: ${(r.positives||[]).join('; ')}
 ${r.factFindGaps&&r.factFindGaps.length?`FACT FIND GAPS: ${r.factFindGaps.join('; ')}`:''}
 ${r.lifeMilestonesMissed&&r.lifeMilestonesMissed.length?`MISSED MOMENTS: ${r.lifeMilestonesMissed.join('; ')}`:''}
-ISSUES: ${(r.corrections||[]).map((c,i)=>`${i+1}. ${c.title}: ${c.whatWentWrong}`).join(' | ')}
+ISSUES: ${(r.corrections||[]).map((c,i)=>`${i+1}. ${c.title}: ${c.whatWentWrong} | Shane says: ${c.shaneSays||''}`).join(' | ')}
 TRAINING FOCUS: ${r.trainingFocus||''}
-TRANSCRIPT EXCERPT: ${currentTranscript?currentTranscript.substring(0,800):'Not available'}
-End with "My Follow-Up" section: Phil commits to specific review action — what he will listen for, how many calls, by when.
-Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<paragraphs separated by \\n\\n, signed Phil, ending with My Follow-Up>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
+
+FULL TRANSCRIPT:
+${currentTranscript||'Not available'}
+
+Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<full email with section headings, paragraphs separated by \n\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     document.getElementById('emailTo').textContent=email.to;
