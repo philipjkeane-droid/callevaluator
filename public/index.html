@@ -220,7 +220,7 @@ textarea::placeholder{color:var(--muted);}
         <div style="font-size:13px;color:#8ba4b8;font-family:'DM Sans',sans-serif">Quick check: is this sale solid, or is it a clawback waiting to happen?</div>
       </div>
       <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:#8ba4b8;text-align:right">
-        Based on Shane's 6-element<br>cementing framework
+        Based on Shane's 7-element<br>cementing framework
       </div>
     </div>
   </div>
@@ -230,7 +230,7 @@ textarea::placeholder{color:var(--muted);}
     <!-- Explainer block -->
     <div style="background:#fff;border:1px solid #ddd8ce;border-left:4px solid #2d9d8f;border-radius:8px;padding:18px 22px;margin-bottom:24px;font-family:'DM Sans',sans-serif">
       <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2d9d8f;margin-bottom:8px">HOW TO USE THIS</div>
-      <div style="font-size:14px;color:#444;line-height:1.6">Paste the transcript from the <strong>last call on any sale currently on the board</strong>. The AI will check it against the full 6-element cementing framework and tell you if it's solid, at risk, or needs a re-cement call before the policy activates.</div>
+      <div style="font-size:14px;color:#444;line-height:1.6">Paste the transcript from the <strong>last call on any sale currently on the board</strong>. The AI will check it against the full 7-element cementing framework and tell you if it's solid, at risk, or needs a re-cement call before the policy activates.</div>
     </div>
 
     <!-- Input form -->
@@ -256,7 +256,7 @@ textarea::placeholder{color:var(--muted);}
     <!-- Loading -->
     <div id="cementLoading" style="display:none;text-align:center;padding:50px 0;font-family:'DM Sans',sans-serif">
       <div style="width:100%;height:3px;background:#ddd8ce;border-radius:2px;overflow:hidden;margin-bottom:20px"><div style="height:100%;background:#2d9d8f;border-radius:2px;animation:loadpulse 1.8s ease-in-out infinite;width:60%"></div></div>
-      <p style="color:#888;font-size:13px;letter-spacing:1px" id="cementLoadMsg">Checking against the 6-element cementing framework...</p>
+      <p style="color:#888;font-size:13px;letter-spacing:1px" id="cementLoadMsg">Checking against the 7-element cementing framework...</p>
     </div>
 
     <!-- Results -->
@@ -390,18 +390,19 @@ CREDIT if: Client committed clearly to sign immediately after the call, or signe
 8. CEMENTING — required whenever a sale is AGREED, whether DocuSign is signed or not:
 If a sale was agreed on this call, cementing is MANDATORY. Do not wait for DocuSign to be signed before cementing — cement first, then send DocuSign. A properly cemented client will sign. An uncemented client may not.
 
-ALL 6 ELEMENTS REQUIRED:
+ALL 7 ELEMENTS REQUIRED:
 1. AFFORDABILITY STRESS TEST: "Are you comfortable paying this even in tighter months? I need your assurance on this before we proceed." Single most important lock-in. Absent = FAIL.
 2. LONG-TERM COMMITMENT FRAMING: The policy must be framed as a long-term commitment. The advisor should state the actual policy term (e.g. 15 years, 20 years, 25 years — whatever applies to this client). CREDIT the advisor for stating the correct specific term. Do NOT penalise for saying "15 years" instead of "25 years" — the term is variable and depends on the product. What matters is that a specific term was stated and the long-term nature was emphasised.
 3. CANCELLATION CONSEQUENCES: Costs in two ways — (a) unprotected, (b) pay more later. Discount loss, age repricing, starting again, insurer perception. Must be stated clearly.
 4. CHANGES THROUGH LOWQUOTES ONLY: Any changes must come back through LowQuotes to keep the discount. Going elsewhere loses it. ALSO PASSES if the advisor tells the client to come back to them directly for any changes — this achieves the same gatekeeper effect.
 5. VERBAL COMMITMENT: Advisor asks a direct commitment question — e.g. "Are you fully with me on this?", "Are you 100% happy for me to put this in place?", or any clear direct ask for commitment. Any affirmative response (yes, yeah, grand, absolutely) counts as a pass — the advisor cannot control how the client phrases their answer.
-6. CONTROL MAINTAINED: Advisor does not hand control back before cementing is complete. "I'll wait for your email" before cementing = easy exit for the client.
+6. CLIENT OWNERSHIP: Client confirms the decision. Any affirmative response counts (yes, yeah, grand, absolutely) — the advisor cannot control how the client phrases their answer. The sale being on the board already demonstrates ownership.
+7. CONTROL MAINTAINED: Advisor does not hand control back before cementing is complete. "I'll wait for your email" before cementing = easy exit for the client.
 
 PERSUASION IS NOT CEMENTING: "I really hope you proceed" = persuasion. Cementing = behavioural commitment locking. Completely different.
 
-PASS: All 6 elements, verbal commitment obtained.
-PARTIAL: 4-5 elements, missing affordability stress test or verbal lock-in.
+PASS: All 7 elements, genuine verbal commitment.
+PARTIAL: 4-6 elements, missing affordability stress test or verbal lock-in.
 FAIL: Fewer than 4 elements, or affordability stress test absent.
 FAIL = clawbackRisk high automatically.
 
@@ -464,6 +465,7 @@ OUTPUT: ONLY valid JSON. No markdown. Strings max 25 words. Max 3 corrections.
     "cancellationConsequences": <bool>,
     "changesThroughLowQuotes": <bool>,
     "verbalCommitment": <bool>,
+    "clientOwnership": <bool>,
     "controlMaintained": <bool>
   }>,
   "keyCommitmentsForNextCall": ["<max 15 words>"],
@@ -492,7 +494,7 @@ function switchTab(tab){
 }
 
 const cementLoadMsgs = [
-  "Checking against the 6-element cementing framework...",
+  "Checking against the 7-element cementing framework...",
   "Looking for affordability stress test...",
   "Checking for verbal commitment...",
   "Assessing client ownership...",
@@ -516,20 +518,21 @@ async function runCementCheck(){
 
   const CEMENT_SYSTEM = `You are a senior sales coach at LowQuotes assessing cement quality on a completed sale. Evaluate the transcript ONLY for cementing. Ignore everything else.
 
-THE 6-ELEMENT CEMENTING FRAMEWORK:
+THE 7-ELEMENT CEMENTING FRAMEWORK:
 1. AFFORDABILITY STRESS TEST: Client asked if comfortable paying even in tighter months. Most critical.
 2. LONG-TERM COMMITMENT FRAMING: Policy framed as a long-term commitment with the specific term stated (e.g. 15, 20 or 25 years depending on the product). Credit the advisor for stating the correct term — do NOT penalise for saying 15 years instead of 25 years. The term is variable.
 3. CANCELLATION CONSEQUENCES: Client told cancelling costs them — discount loss, age repricing, starting again, insurer perception.
 4. CHANGES THROUGH LOWQUOTES ONLY: Client told changes must come back through LowQuotes to keep discount. ALSO PASSES if the advisor tells the client to come back to them directly for any changes — this achieves the same gatekeeper effect.
-5. VERBAL COMMITMENT: Advisor asks a direct commitment question — e.g. "Are you fully with me on this?", "Are you 100% happy for me to put this in place?", or any clear direct ask. Any affirmative response (yes, yeah, grand, absolutely) counts as a pass — the advisor cannot control how the client phrases their answer.
-6. CONTROL MAINTAINED: Advisor did not hand control back before cementing complete.
+5. VERBAL COMMITMENT: Advisor asks a direct commitment question — e.g. "Are you fully with me on this?", "Are you 100% happy for me to put this in place?", or any clear direct ask. Any affirmative response (yes, yeah, grand, absolutely) counts as a pass.
+6. CLIENT OWNERSHIP: Client confirms the decision. Any affirmative response counts (yes, yeah, grand, absolutely) — the advisor cannot control how the client phrases their answer.
+7. CONTROL MAINTAINED: Advisor did not hand control back before cementing complete.
 
 Persuasion (I hope you proceed, great policy) is NOT cementing. Cementing = behavioural commitment locking.
 
-VERDICT: 6/6=Solid, 4-5/6=Watch, 3/6=At Risk, 0-2/6=High Risk
+VERDICT: 7/7=Solid, 5-6/7=Watch, 3-4/7=At Risk, 0-2/7=High Risk
 
 Return ONLY valid JSON, no markdown, no preamble:
-{"verdict":"<Solid|Watch|At Risk|High Risk>","score":<0-6>,"headline":"<blunt one sentence max 20 words>","clawbackRisk":"<low|medium|high|critical>","elements":{"affordabilityStressTest":{"pass":<bool>,"note":"<max 15 words>"},"longTermFraming":{"pass":<bool>,"note":"<max 15 words>"},"cancellationConsequences":{"pass":<bool>,"note":"<max 15 words>"},"changesThroughLowQuotes":{"pass":<bool>,"note":"<max 15 words>"},"verbalCommitment":{"pass":<bool>,"note":"<max 15 words>"},"controlMaintained":{"pass":<bool>,"note":"<max 15 words>"}},"biggestGap":"<max 20 words>","action":"<none needed|coaching note recommended|re-cement call required, max 20 words>"}`;
+{"verdict":"<Solid|Watch|At Risk|High Risk>","score":<0-7>,"headline":"<blunt one sentence max 20 words>","clawbackRisk":"<low|medium|high|critical>","elements":{"affordabilityStressTest":{"pass":<bool>,"note":"<max 15 words>"},"longTermFraming":{"pass":<bool>,"note":"<max 15 words>"},"cancellationConsequences":{"pass":<bool>,"note":"<max 15 words>"},"changesThroughLowQuotes":{"pass":<bool>,"note":"<max 15 words>"},"verbalCommitment":{"pass":<bool>,"note":"<max 15 words>"},"clientOwnership":{"pass":<bool>,"note":"<max 15 words>"},"controlMaintained":{"pass":<bool>,"note":"<max 15 words>"}},"biggestGap":"<max 20 words>","action":"<none needed|coaching note recommended|re-cement call required, max 20 words>"}`;
 
   try{
     const resp = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -581,14 +584,14 @@ function renderCementCheck(r, advisor, client){
   };
   // Always recalculate score from checklist — AI self-reported scores can be wrong
   if(r.elements){
-    const keys = ['affordabilityStressTest','longTermFraming','cancellationConsequences','changesThroughLowQuotes','verbalCommitment','controlMaintained'];
+    const keys = ['affordabilityStressTest','longTermFraming','cancellationConsequences','changesThroughLowQuotes','verbalCommitment','clientOwnership','controlMaintained'];
     r.score = keys.filter(k => r.elements[k] && r.elements[k].pass === true).length;
-    if(r.score === 6) r.verdict = 'Solid';
-    else if(r.score >= 4) r.verdict = 'Watch';
+    if(r.score === 7) r.verdict = 'Solid';
+    else if(r.score >= 5) r.verdict = 'Watch';
     else if(r.score >= 3) r.verdict = 'At Risk';
     else r.verdict = 'High Risk';
-    if(r.score === 6) r.clawbackRisk = 'low';
-    else if(r.score >= 4) r.clawbackRisk = 'medium';
+    if(r.score === 7) r.clawbackRisk = 'low';
+    else if(r.score >= 5) r.clawbackRisk = 'medium';
     else if(r.score >= 3) r.clawbackRisk = 'high';
     else r.clawbackRisk = 'critical';
   }
@@ -599,6 +602,7 @@ function renderCementCheck(r, advisor, client){
     cancellationConsequences:'Cancellation consequences explained',
     changesThroughLowQuotes:'Changes through LowQuotes only',
     verbalCommitment:'Verbal commitment obtained',
+    clientOwnership:'Client owns the decision',
     controlMaintained:'Control maintained through activation'
   };
 
@@ -698,7 +702,7 @@ IMPORTANT — EVALUATE THIS CALL IN THE CONTEXT OF THE FULL JOURNEY:
 
   try{
     const saleInstruction = saleOnBoardChecked
-      ? `\n\nSALE ON BOARD — CONFIRMED BY MANAGER: The manager has confirmed a sale was agreed on this call. Cementing is MANDATORY. Evaluate cementing strictly against all 6 elements. If cementing is absent or incomplete, this is a FAIL regardless of everything else. Set cementingVerdict accordingly and flag as high clawback risk if missing.`
+      ? `\n\nSALE ON BOARD — CONFIRMED BY MANAGER: The manager has confirmed a sale was agreed on this call. Cementing is MANDATORY. Evaluate cementing strictly against all 7 elements. If cementing is absent or incomplete, this is a FAIL regardless of everything else. Set cementingVerdict accordingly and flag as high clawback risk if missing.`
       : '';
 
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
@@ -793,12 +797,13 @@ function renderResults(r,advisor){
       ['affordabilityStressTest','Affordability stress-tested ("even in tighter months?")'],
       ['longTermFraming','Long-term commitment framed (specific term stated)'],
       ['cancellationConsequences','Cancellation consequences explained'],
-      ['changesThroughLowQuotes','Changes through LowQuotes or back to advisor directly'],
-      ['verbalCommitment','Verbal commitment obtained (direct ask + any affirmative)'],
+      ['changesThroughLowQuotes','Changes must come through LowQuotes only'],
+      ['verbalCommitment','Verbal commitment obtained ("are you fully with me?")'],
+      ['clientOwnership','Client owns the decision (not just agreeing)'],
       ['controlMaintained','Control maintained through activation']
     ];
     const passed=items.filter(([k])=>cl[k]).length;
-    html+=`<div class="result-section-title">CEMENTING — ${passed}/6 ELEMENTS</div><div class="monitoring-card" style="border-left:3px solid ${cc}"><div class="monitoring-items">`;
+    html+=`<div class="result-section-title">CEMENTING — ${passed}/7 ELEMENTS</div><div class="monitoring-card" style="border-left:3px solid ${cc}"><div class="monitoring-items">`;
     items.forEach(([k,l])=>{const ok=cl[k];html+=`<div class="monitoring-item"><span class="m-icon" style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✕'}</span><span class="m-text" style="color:${ok?'var(--text)':'var(--red)'}">${l}</span></div>`;});
     html+=`<div style="margin-top:12px;padding:10px 14px;background:var(--black);border-radius:6px;font-size:12px;color:var(--muted);border:1px solid var(--border)">Persuasion ≠ Cementing. "I hope you proceed" is not cementing. Behavioural commitment locking is cementing.</div>`;
     html+='</div></div>';
