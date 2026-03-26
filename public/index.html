@@ -392,7 +392,7 @@ If a sale was agreed on this call, cementing is MANDATORY. Do not wait for DocuS
 
 ALL 7 ELEMENTS REQUIRED:
 1. AFFORDABILITY STRESS TEST: "Are you comfortable paying this even in tighter months? I need your assurance on this before we proceed." Single most important lock-in. Absent = FAIL.
-2. LONG-TERM COMMITMENT FRAMING: "This is a long-term contract — 25 years." Must be stated explicitly.
+2. LONG-TERM COMMITMENT FRAMING: The policy must be framed as a long-term commitment. The advisor should state the actual policy term (e.g. 15 years, 20 years, 25 years — whatever applies to this client). CREDIT the advisor for stating the correct specific term. Do NOT penalise for saying "15 years" instead of "25 years" — the term is variable and depends on the product. What matters is that a specific term was stated and the long-term nature was emphasised.
 3. CANCELLATION CONSEQUENCES: Costs in two ways — (a) unprotected, (b) pay more later. Discount loss, age repricing, starting again, insurer perception. Must be stated clearly.
 4. CHANGES THROUGH LOWQUOTES ONLY: Any changes must come back through LowQuotes to keep the discount. Going elsewhere loses it.
 5. VERBAL COMMITMENT: "Are you fully with me on this?" Passive responses (okay, grand, that makes sense) are NOT commitment.
@@ -520,7 +520,7 @@ async function runCementCheck(){
 
 THE 7-ELEMENT CEMENTING FRAMEWORK:
 1. AFFORDABILITY STRESS TEST: Client asked if comfortable paying even in tighter months. Most critical.
-2. LONG-TERM COMMITMENT FRAMING: Policy explicitly framed as 25-year long-term commitment.
+2. LONG-TERM COMMITMENT FRAMING: Policy framed as a long-term commitment with the specific term stated (e.g. 15, 20 or 25 years depending on the product). Credit the advisor for stating the correct term — do NOT penalise for saying 15 years instead of 25 years. The term is variable.
 3. CANCELLATION CONSEQUENCES: Client told cancelling costs them — discount loss, age repricing, starting again, insurer perception.
 4. CHANGES THROUGH LOWQUOTES ONLY: Client told changes must come back through LowQuotes to keep discount.
 5. VERBAL COMMITMENT: "Are you fully with me on this?" asked directly. Passive (okay/grand/that makes sense) is NOT commitment.
@@ -795,7 +795,7 @@ function renderResults(r,advisor){
     const cl=r.cementingChecklist;
     const items=[
       ['affordabilityStressTest','Affordability stress-tested ("even in tighter months?")'],
-      ['longTermFraming','Long-term commitment framed (25 years)'],
+      ['longTermFraming','Long-term commitment framed (specific term stated)'],
       ['cancellationConsequences','Cancellation consequences explained'],
       ['changesThroughLowQuotes','Changes must come through LowQuotes only'],
       ['verbalCommitment','Verbal commitment obtained ("are you fully with me?")'],
