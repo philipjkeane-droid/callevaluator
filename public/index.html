@@ -481,7 +481,7 @@ OUTPUT: ONLY valid JSON. No markdown. Strings max 25 words. Max 3 corrections.
 }
 `;
 
-let currentResult=null,currentAdvisor=null,currentTranscript=null,currentCaseId=null,allCases={};
+let currentResult=null,currentAdvisor=null,currentTranscript=null,currentCaseId=null,allCases={};let cementResult=null,cementAdvisorName=null,cementClientName=null,cementTranscriptText=null;
 const loadingMsgs=["Reading the transcript...","Determining call type...","Checking script sequence...","Scoring each section...","Identifying coaching moments...","Building your report..."];
 let msgInterval;
 
@@ -568,7 +568,7 @@ Return ONLY valid JSON, no markdown, no preamble:
     const result = JSON.parse(clean);
     clearInterval(cementInterval);
     document.getElementById('cementLoading').style.display='none';
-    renderCementCheck(result, advisor, client);
+    cementResult=result;cementAdvisorName=advisor;cementClientName=client;cementTranscriptText=document.getElementById('cementTranscript').value.trim();renderCementCheck(result, advisor, client);
   }catch(e){
     clearInterval(cementInterval);
     document.getElementById('cementLoading').style.display='none';
@@ -652,6 +652,7 @@ function renderCementCheck(r, advisor, client){
     </div>`;
   }
 
+  html+=`<button onclick="generateCementEmail()" style="width:100%;padding:13px;background:#1a2332;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border:none;border-radius:8px;cursor:pointer;margin-top:12px;transition:all .2s" onmouseover="this.style.background='#2d9d8f'" onmouseout="this.style.background='#1a2332'">✉ SUMMARY EMAIL TO ADVISOR</button>`;
   html+=`<button onclick="document.getElementById('cementAdvisor').value='';document.getElementById('cementClient').value='';document.getElementById('cementTranscript').value='';document.getElementById('cementResults').style.display='none';document.getElementById('cementBtn').disabled=false;window.scrollTo({top:0,behavior:'smooth'})" style="width:100%;padding:13px;background:transparent;border:1px solid #ddd8ce;color:#888;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;border-radius:8px;cursor:pointer;margin-top:4px" onmouseover="this.style.borderColor='#1a2332';this.style.color='#1a2332'" onmouseout="this.style.borderColor='#ddd8ce';this.style.color='#888'">↺ CHECK ANOTHER SALE</button>`;
 
   document.getElementById('cementResults').innerHTML = html;
@@ -1186,6 +1187,58 @@ Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and pr
   document.getElementById('emailBtn').disabled=false;
 }
 
+
+async function generateCementEmail(){
+  const r=cementResult;const advisor=cementAdvisorName;const client=cementClientName;const transcript=cementTranscriptText;
+  if(!r||!advisor)return;
+  document.getElementById('emailModal').style.display='block';
+  document.getElementById('emailLoading').style.display='block';
+  document.getElementById('emailContent').style.display='none';
+  document.getElementById('emailBtn').disabled=true;
+  const elementSummary=r.elements?Object.entries(r.elements).map(([k,v])=>`${k}: ${v.pass?'PASS':'FAIL'} — ${v.note||''}`).join('\n'):'';
+  const prompt=`You are Phil, sales manager at LowQuotes. Write a summary coaching email to an advisor about their CEMENTING on a completed sale.
+
+STRUCTURE (use these exact section headings):
+1. Opening — identify the specific call (client name: ${client||'unknown'}, product if mentioned). One sentence setting the tone.
+2. "What You Did Well" — For each cement element that PASSED, include a short direct quote from the transcript showing the moment (in italics using *quote*). Explain WHY it was effective.
+3. "Areas for Improvement" — For each cement element that FAILED, describe the specific moment where it was missing or fell short, with a transcript quote if possible. Explain exactly what should have been said, with a concrete example script.
+4. "Key Takeaway" — one sentence summary of the single biggest thing to focus on next sale.
+5. "My Follow-Up" — Phil commits to a specific review action: what he will listen for, how many calls, by when.
+
+TONE: Coaching-focused but firm. Lead with positives. Address issues directly and constructively. Use natural paragraphs.
+CRITICAL: The transcript quotes must be REAL extracts from the transcript provided — never fabricate quotes.
+
+ADVISOR: ${advisor} | CLIENT: ${client||'Unknown'} | VERDICT: ${r.verdict} | SCORE: ${r.score}/7 | CLAWBACK RISK: ${r.clawbackRisk}
+${r.headline?'HEADLINE: '+r.headline:''}
+${r.biggestGap?'BIGGEST GAP: '+r.biggestGap:''}
+${r.action?'ACTION: '+r.action:''}
+
+CEMENT ELEMENT RESULTS:
+${elementSummary}
+
+FULL TRANSCRIPT:
+${transcript||'Not available'}
+
+Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and cementing verdict>","body":"<full email with section headings, paragraphs separated by \n\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
+  try{
+    const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:prompt}]})});
+    const data=await resp.json();
+    const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    document.getElementById('emailTo').textContent=email.to;
+    document.getElementById('emailSubject').textContent=email.subject;
+    document.getElementById('emailBody').value=email.body;
+    if(email.followUpAction){document.getElementById('followUpText').textContent=email.followUpAction;document.getElementById('followUpBlock').style.display='block';}
+    document.getElementById('emailLoading').style.display='none';
+    document.getElementById('emailContent').style.display='block';
+  }catch(e){
+    document.getElementById('emailLoading').style.display='none';
+    document.getElementById('emailContent').innerHTML='<p style="color:var(--red);padding:20px">Failed to generate email. Please try again.</p>';
+    document.getElementById('emailContent').style.display='block';
+    console.error(e);
+  }
+  document.getElementById('emailBtn').disabled=false;
+}
 function closeEmailModal(){
   document.getElementById('emailModal').style.display='none';
   document.getElementById('followUpBlock').style.display='none';
