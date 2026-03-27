@@ -391,7 +391,7 @@ CREDIT if: Client committed clearly to sign immediately after the call, or signe
 If a sale was agreed on this call, cementing is MANDATORY. Do not wait for DocuSign to be signed before cementing — cement first, then send DocuSign. A properly cemented client will sign. An uncemented client may not.
 
 CRITICAL EVALUATION RULE: Advisors naturally combine multiple cement elements in the same sentence or exchange. You MUST evaluate each element independently. If a single sentence covers affordability AND long-term framing AND cancellation consequences, credit ALL THREE. Never fail an element just because it was delivered alongside another element. Scan the entire transcript for evidence of each element separately.
-CONSISTENCY RULE: Be GENEROUS when evaluating. If there is reasonable evidence an element was covered — even if the phrasing is informal, spread across multiple exchanges, or embedded within another topic — mark it as PASS. Only mark FAIL when the element is genuinely absent from the entire transcript. When in doubt, PASS.
+CONSISTENCY RULE: Be GENEROUS and DETERMINISTIC when evaluating. Scan the ENTIRE transcript from start to finish — cement elements often appear in the final 20% of long calls. For calls over 30 minutes, pay EXTRA attention to the closing section where cementing typically happens. If there is reasonable evidence an element was covered — even if the phrasing is informal, spread across multiple exchanges, or embedded within another topic — mark it as PASS. Only mark FAIL when the element is genuinely absent from the ENTIRE transcript after thorough scanning. When in doubt, PASS.
 
 ALL 7 ELEMENTS REQUIRED:
 1. AFFORDABILITY STRESS TEST: The advisor confirms the client can afford the premium even in difficult months. PASS if the advisor asks about or confirms affordability in ANY of these ways: "even if it's a bad month", "even in tighter months", "even when things go wrong with your finances", "are you comfortable with the premium every month", "even on a tight month", "around Christmas when there's loads of bills", "that payment's gonna be alright", or any variation that stress-tests whether the client can sustain the cost long-term. The phrasing does NOT need to be exact — what matters is that the advisor raised the question of affordability under financial pressure or confirmed the client can handle it in tough times. Statements AND questions both count. This may be spread across multiple exchanges — scan the ENTIRE transcript. Single most important lock-in. Absent = FAIL.
@@ -522,7 +522,7 @@ async function runCementCheck(){
   const CEMENT_SYSTEM = `You are a senior sales coach at LowQuotes assessing cement quality on a completed sale. Evaluate the transcript ONLY for cementing. Ignore everything else.
 
 CRITICAL EVALUATION RULE: Advisors naturally combine multiple cement elements in the same sentence or exchange. Evaluate each element INDEPENDENTLY. If one sentence covers multiple elements, credit ALL of them. Never fail an element because it was delivered alongside another. Scan the entire transcript for evidence of each element separately.
-CONSISTENCY RULE: Be GENEROUS when evaluating. If there is reasonable evidence an element was covered — even if the phrasing is informal, spread across multiple exchanges, or embedded within another topic — mark it as PASS. Only mark FAIL when the element is genuinely absent from the entire transcript. When in doubt, PASS.
+CONSISTENCY RULE: Be GENEROUS and DETERMINISTIC when evaluating. Scan the ENTIRE transcript from start to finish — cement elements often appear in the final 20% of long calls. For calls over 30 minutes, pay EXTRA attention to the closing section where cementing typically happens. If there is reasonable evidence an element was covered — even if the phrasing is informal, spread across multiple exchanges, or embedded within another topic — mark it as PASS. Only mark FAIL when the element is genuinely absent from the ENTIRE transcript after thorough scanning. When in doubt, PASS.
 
 THE 7-ELEMENT CEMENTING FRAMEWORK:
 1. AFFORDABILITY STRESS TEST: The advisor confirms the client can afford the premium even in difficult months. PASS if the advisor asks about or confirms affordability in ANY of these ways: "even if it's a bad month", "even in tighter months", "even when things go wrong with your finances", "are you comfortable with the premium every month", "even on a tight month", "around Christmas when there's loads of bills", "that payment's gonna be alright", or any variation that stress-tests whether the client can sustain the cost long-term. The phrasing does NOT need to be exact. Statements AND questions both count. May be spread across multiple exchanges — scan the ENTIRE transcript. Most critical element.
@@ -542,7 +542,7 @@ Return ONLY valid JSON, no markdown, no preamble:
 
   try{
     const resp = await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,temperature:0,
         system: CEMENT_SYSTEM,
         messages:[{role:"user",content:`Advisor: ${advisor}\nClient: ${client||'Not specified'}\n\nTRANSCRIPT:\n${transcript}\n\nEvaluate cementing only. Return valid JSON only.`}]})});
 
@@ -713,7 +713,7 @@ IMPORTANT — EVALUATE THIS CALL IN THE CONTEXT OF THE FULL JOURNEY:
       : '';
 
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,system:SCRIPT_CONTEXT,
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,system:SCRIPT_CONTEXT,
         messages:[{role:"user",content:`Advisor: ${advisor}\n${context?`Context: ${context}\n`:''}${previousCallsContext}${saleInstruction}\n\nTRANSCRIPT:\n${transcript}\n\nDetect call type, product, outcome. Evaluate strictly. Return valid JSON only.`}]})});
     const data=await resp.json();
     let raw=data.content.map(i=>i.text||'').join('');
@@ -1078,7 +1078,7 @@ Return ONLY valid JSON:
 
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     let raw=data.content.map(i=>i.text||'').join('');
     const report=JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -1171,7 +1171,7 @@ ${currentTranscript||'Not available'}
 Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<full email with section headings, paragraphs separated by \n\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     document.getElementById('emailTo').textContent=email.to;
@@ -1224,7 +1224,7 @@ ${transcript||'Not available'}
 Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and cementing verdict>","body":"<full email with section headings, paragraphs separated by \n\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     document.getElementById('emailTo').textContent=email.to;
