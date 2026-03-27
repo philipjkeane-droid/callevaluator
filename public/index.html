@@ -1136,6 +1136,7 @@ function renderCaseReport(r,c){
 
 // EMAIL
 async function generateEmail(){
+  console.log("generateEmail called", {currentResult: !!currentResult, currentAdvisor: currentAdvisor, currentTranscript: !!currentTranscript});
   const r=currentResult;const advisor=currentAdvisor;
   if(!r||!advisor)return;
   document.getElementById('emailModal').style.display='block';
@@ -1165,14 +1166,15 @@ ${r.lifeMilestonesMissed&&r.lifeMilestonesMissed.length?`MISSED MOMENTS: ${r.lif
 ISSUES: ${(r.corrections||[]).map((c,i)=>`${i+1}. ${c.title}: ${c.whatWentWrong} | Shane says: ${c.shaneSays||''}`).join(' | ')}
 TRAINING FOCUS: ${r.trainingFocus||''}
 
-FULL TRANSCRIPT:
-${currentTranscript||'Not available'}
+TRANSCRIPT (key sections):
+${currentTranscript?currentTranscript.substring(0,15000):'Not available'}
 
 Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<full email with section headings, paragraphs separated by \n\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
+    if(!resp.ok){throw new Error("API error: "+resp.status+". "+JSON.stringify(data));}
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     document.getElementById('emailTo').textContent=email.to;
     document.getElementById('emailSubject').textContent=email.subject;
@@ -1182,7 +1184,7 @@ Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and pr
     document.getElementById('emailContent').style.display='block';
   }catch(e){
     document.getElementById('emailLoading').style.display='none';
-    document.getElementById('emailContent').innerHTML='<p style="color:var(--red);padding:20px">Failed to generate email. Please try again.</p>';
+    document.getElementById('emailContent').innerHTML='<p style="color:var(--red);padding:20px">Failed to generate email: "+e.message+". Please try again.</p>';
     document.getElementById('emailContent').style.display='block';
     console.error(e);
   }
@@ -1218,8 +1220,8 @@ ${r.action?'ACTION: '+r.action:''}
 CEMENT ELEMENT RESULTS:
 ${elementSummary}
 
-FULL TRANSCRIPT:
-${transcript||'Not available'}
+TRANSCRIPT (key sections):
+${transcript?transcript.substring(0,15000):'Not available'}
 
 Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and cementing verdict>","body":"<full email with section headings, paragraphs separated by \n\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
@@ -1227,6 +1229,7 @@ Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and ce
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    if(!resp.ok){throw new Error("API error: "+resp.status+". "+JSON.stringify(data));}
     document.getElementById('emailTo').textContent=email.to;
     document.getElementById('emailSubject').textContent=email.subject;
     document.getElementById('emailBody').value=email.body;
@@ -1235,7 +1238,7 @@ Return ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and ce
     document.getElementById('emailContent').style.display='block';
   }catch(e){
     document.getElementById('emailLoading').style.display='none';
-    document.getElementById('emailContent').innerHTML='<p style="color:var(--red);padding:20px">Failed to generate email. Please try again.</p>';
+    document.getElementById('emailContent').innerHTML='<p style="color:var(--red);padding:20px">Failed to generate email: "+e.message+". Please try again.</p>';
     document.getElementById('emailContent').style.display='block';
     console.error(e);
   }
