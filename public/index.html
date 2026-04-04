@@ -124,6 +124,7 @@ textarea::placeholder{color:var(--muted);}
     <button class="tab-btn active" onclick="switchTab('evaluate')">▶ EVALUATE</button>
     <button class="tab-btn" onclick="switchTab('cases')">📁 CASES</button>
     <button class="tab-btn" onclick="switchTab('cement')">🔒 CEMENT CHECK</button>
+    <button class="tab-btn" onclick="switchTab('tracker')">📊 REP TRACKER</button>
   </div>
 </header>
 
@@ -178,6 +179,7 @@ textarea::placeholder{color:var(--muted);}
       <button class="btn-copy" onclick="copyReport()">⎘ Copy Report</button>
       <button class="btn-accent" id="emailBtn" onclick="generateEmail()">✉ Summary Email to Advisor</button>
       <button class="btn-accent" id="saveCallBtn" onclick="saveCallToCase()" style="display:none">💾 Save to Case</button>
+      <button class="btn-accent" id="logTrackerBtn" onclick="logToTracker()" style="display:none">📊 Log to Tracker</button>
     </div>
   </div>
 </div>
@@ -265,9 +267,55 @@ textarea::placeholder{color:var(--muted);}
   </div>
 </div>
 
+<!-- TRACKER TAB -->
+<div id="tab-tracker" class="tab-panel">
+
+  <!-- PIN GATE -->
+  <div id="tracker-pin-gate" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:40px 36px;max-width:340px;width:100%;text-align:center">
+      <div style="width:48px;height:48px;background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.3);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:22px">🔐</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;margin-bottom:8px">MANAGER ACCESS</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5">This section is restricted.<br>Enter your PIN to continue.</div>
+      <input type="password" id="tracker-pin-input" maxlength="6" placeholder="••••"
+        style="width:100%;background:var(--black);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-family:'DM Mono',monospace;font-size:22px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px;transition:border-color .2s"
+        onkeydown="if(event.key==='Enter')submitTrackerPin()"
+        oninput="document.getElementById('tracker-pin-error').style.display='none'" />
+      <div id="tracker-pin-error" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px">Incorrect PIN. Try again.</div>
+      <button onclick="submitTrackerPin()" class="btn-primary" style="margin-top:4px">UNLOCK</button>
+    </div>
+  </div>
+
+  <!-- TRACKER CONTENT (hidden until PIN passed) -->
+  <div id="tracker-content" style="display:none">
+    <div class="panel">
+      <div class="panel-label">TEAM PERFORMANCE TRACKER</div>
+      <div id="tracker-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+        <select id="tracker-filter-rep" onchange="renderTrackerTab()" style="background:var(--black);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px">
+          <option value="all">All advisors</option>
+        </select>
+        <select id="tracker-filter-risk" onchange="renderTrackerTab()" style="background:var(--black);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px">
+          <option value="all">All clawback levels</option>
+          <option value="critical">Critical only</option>
+          <option value="high">High only</option>
+          <option value="medium">Medium only</option>
+          <option value="low">Low only</option>
+        </select>
+        <button class="btn-secondary" onclick="lockTracker()" style="margin-left:auto">🔒 Lock</button>
+        <button class="btn-secondary" onclick="clearTrackerData()">Clear all data</button>
+      </div>
+      <div style="display:flex;gap:0;margin-bottom:20px">
+        <button class="tab-btn active" id="ttab-log" onclick="switchTrackerView('log')" style="font-size:12px;padding:7px 16px">ALL CALLS</button>
+        <button class="tab-btn" id="ttab-summary" onclick="switchTrackerView('summary')" style="font-size:12px;padding:7px 16px;border-left:none">REP SUMMARY</button>
+      </div>
+      <div id="tracker-view-log"></div>
+      <div id="tracker-view-summary" style="display:none"></div>
+    </div>
+  </div>
+
 </div>
 
-<!-- EMAIL MODAL -->
+</div><!-- end container -->
 <div id="emailModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
@@ -488,12 +536,14 @@ let msgInterval;
 
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
-    b.classList.toggle('active',(i===0&&tab==='evaluate')||(i===1&&tab==='cases')||(i===2&&tab==='cement'));
+    b.classList.toggle('active',(i===0&&tab==='evaluate')||(i===1&&tab==='cases')||(i===2&&tab==='cement')||(i===3&&tab==='tracker'));
   });
   document.getElementById('tab-evaluate').classList.toggle('active',tab==='evaluate');
   document.getElementById('tab-cases').classList.toggle('active',tab==='cases');
   document.getElementById('tab-cement').classList.toggle('active',tab==='cement');
+  document.getElementById('tab-tracker').classList.toggle('active',tab==='tracker');
   if(tab==='cases')loadCases();
+  if(tab==='tracker')checkTrackerPin();
 }
 
 const cementLoadMsgs = [
@@ -881,6 +931,7 @@ function renderResults(r,advisor){
   document.getElementById('resultsInner').innerHTML=html;
   document.getElementById('results').style.display='block';
   document.getElementById('evalBtn').disabled=false;
+  document.getElementById('logTrackerBtn').style.display='flex';
   document.getElementById('results').scrollIntoView({behavior:'smooth'});
 }
 
@@ -1327,6 +1378,7 @@ function resetForm(){
   box.style.background='transparent'; box.style.borderColor='var(--border)'; box.innerHTML='';
   row.style.borderColor='var(--border)'; row.style.background='var(--black)';
   currentResult=null;currentAdvisor=null;currentTranscript=null;
+  document.getElementById('logTrackerBtn').style.display='none';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1353,6 +1405,247 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   });
 });
+
+// ── REP TRACKER PIN ──────────────────────────────────────────
+const TRACKER_PIN = '1404';
+let trackerUnlocked = false;
+
+function checkTrackerPin(){
+  if(trackerUnlocked){
+    document.getElementById('tracker-pin-gate').style.display='none';
+    document.getElementById('tracker-content').style.display='block';
+    renderTrackerTab();
+  } else {
+    document.getElementById('tracker-pin-gate').style.display='flex';
+    document.getElementById('tracker-content').style.display='none';
+    setTimeout(()=>{ const el=document.getElementById('tracker-pin-input'); if(el)el.focus(); },100);
+  }
+}
+
+function submitTrackerPin(){
+  const val = document.getElementById('tracker-pin-input').value;
+  if(val === TRACKER_PIN){
+    trackerUnlocked = true;
+    document.getElementById('tracker-pin-input').value='';
+    document.getElementById('tracker-pin-error').style.display='none';
+    document.getElementById('tracker-pin-gate').style.display='none';
+    document.getElementById('tracker-content').style.display='block';
+    renderTrackerTab();
+  } else {
+    document.getElementById('tracker-pin-error').style.display='block';
+    document.getElementById('tracker-pin-input').value='';
+    document.getElementById('tracker-pin-input').focus();
+    const input = document.getElementById('tracker-pin-input');
+    input.style.borderColor='var(--red)';
+    setTimeout(()=>{ input.style.borderColor='var(--border)'; }, 1000);
+  }
+}
+
+function lockTracker(){
+  trackerUnlocked = false;
+  document.getElementById('tracker-content').style.display='none';
+  document.getElementById('tracker-pin-gate').style.display='flex';
+  document.getElementById('tracker-pin-input').value='';
+}
+
+// ── REP TRACKER ──────────────────────────────────────────────
+const TRACKER_KEY = 'lq:tracker:evals';
+
+async function logToTracker(){
+  const r = currentResult;
+  if(!r) return;
+  const btn = document.getElementById('logTrackerBtn');
+  const entry = {
+    id: Date.now(),
+    date: new Date().toISOString().split('T')[0],
+    advisor: currentAdvisor || 'Unknown',
+    overallScore: r.overallScore || 0,
+    clawbackRisk: r.clawbackRisk || 'n/a',
+    cementScore: (()=>{
+      if(r.elements){
+        const keys=['affordabilityStressTest','longTermFraming','cancellationConsequences','changesThroughLowQuotes','verbalCommitment','clientOwnership','controlMaintained'];
+        return keys.filter(k=>r.elements[k]&&r.elements[k].pass===true).length;
+      }
+      if(r.cementingChecklist){
+        const keys=['affordabilityStressTest','longTermFraming','cancellationConsequences','changesThroughLowQuotes','verbalCommitment','clientOwnership','controlMaintained'];
+        return keys.filter(k=>r.cementingChecklist[k]).length;
+      }
+      return null;
+    })(),
+    cementVerdict: r.cementingVerdict || null,
+    priHigh: (r.corrections||[]).filter(c=>c.priority==='high').length,
+    priMed: (r.corrections||[]).filter(c=>c.priority==='medium').length,
+    priLow: (r.corrections||[]).filter(c=>c.priority==='low').length,
+    trainingFocus: r.trainingFocus || '',
+    callType: r.detectedCallType || '',
+    product: r.detectedProduct || '',
+    sectionScores: r.sectionScores || {}
+  };
+  let evals = await loadTrackerEvals();
+  evals.push(entry);
+  try {
+    await window.storage.set(TRACKER_KEY, JSON.stringify(evals), false);
+    btn.textContent = '✓ Logged';
+    btn.style.background = 'rgba(76,175,125,.15)';
+    btn.style.borderColor = 'rgba(76,175,125,.4)';
+    btn.style.color = 'var(--green)';
+    setTimeout(()=>{
+      btn.textContent = '📊 Log to Tracker';
+      btn.style.background='';btn.style.borderColor='';btn.style.color='';
+    }, 2500);
+  } catch(e) { alert('Failed to log to tracker.'); }
+}
+
+async function loadTrackerEvals(){
+  try {
+    const r = await window.storage.get(TRACKER_KEY, false);
+    return r ? JSON.parse(r.value) : [];
+  } catch(e) { return []; }
+}
+
+function oc2(s){ return s>=70?'#4caf7d':s>=45?'#e8c547':'#e05c3a'; }
+function clawBadge(r){
+  const map={critical:['#e05c3a','CRITICAL'],high:['#e05c3a','HIGH'],medium:['#e8c547','MEDIUM'],low:['#4caf7d','LOW']};
+  const [c,l]=map[r]||['var(--muted)','N/A'];
+  return `<span style="font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px;background:${c}22;color:${c};border:1px solid ${c}44">${l}</span>`;
+}
+
+function switchTrackerView(v){
+  document.getElementById('tracker-view-log').style.display = v==='log'?'block':'none';
+  document.getElementById('tracker-view-summary').style.display = v==='summary'?'block':'none';
+  document.getElementById('ttab-log').classList.toggle('active', v==='log');
+  document.getElementById('ttab-summary').classList.toggle('active', v==='summary');
+}
+
+async function renderTrackerTab(){
+  const evals = await loadTrackerEvals();
+  const repFilter = document.getElementById('tracker-filter-rep').value;
+  const riskFilter = document.getElementById('tracker-filter-risk').value;
+
+  // populate rep dropdown
+  const reps = [...new Set(evals.map(e=>e.advisor))].sort();
+  const sel = document.getElementById('tracker-filter-rep');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">All advisors</option>';
+  reps.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; if(r===cur)o.selected=true; sel.appendChild(o); });
+
+  let filtered = evals;
+  if(repFilter !== 'all') filtered = filtered.filter(e=>e.advisor===repFilter);
+  if(riskFilter !== 'all') filtered = filtered.filter(e=>e.clawbackRisk===riskFilter);
+  const sorted = [...filtered].sort((a,b)=>b.date.localeCompare(a.date));
+
+  // Metrics
+  const totalEvals = filtered.length;
+  const avgScore = totalEvals ? Math.round(filtered.reduce((s,e)=>s+e.overallScore,0)/totalEvals) : 0;
+  const clawHighCount = filtered.filter(e=>['high','critical'].includes(e.clawbackRisk)).length;
+  const cementEvals = filtered.filter(e=>e.cementScore!==null);
+  const avgCement = cementEvals.length ? (cementEvals.reduce((s,e)=>s+e.cementScore,0)/cementEvals.length).toFixed(1) : '—';
+
+  document.getElementById('tracker-metrics').innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Evaluations</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent)">${totalEvals}</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Avg Score</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${oc2(avgScore)}">${avgScore||'—'}</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Clawback Flags</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${clawHighCount>0?'var(--red)':'var(--green)'}">${clawHighCount}</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Avg Cement</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent)">${avgCement}<span style="font-size:14px;color:var(--muted)">${avgCement!=='—'?'/7':''}</span></div>
+    </div>`;
+
+  // All calls log
+  if(!sorted.length){
+    document.getElementById('tracker-view-log').innerHTML=`<div style="text-align:center;padding:60px;color:var(--muted);font-size:14px;background:var(--card);border-radius:10px;border:1px solid var(--border)">No evaluations logged yet. Run an evaluation and click <strong style="color:var(--accent)">Log to Tracker</strong> to get started.</div>`;
+  } else {
+    let html=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Date</th>
+        <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Advisor</th>
+        <th style="text-align:center;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Score</th>
+        <th style="text-align:center;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Cement</th>
+        <th style="text-align:center;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Clawback</th>
+        <th style="text-align:center;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Corrections</th>
+        <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Training Focus</th>
+        <th style="padding:10px 12px"></th>
+      </tr></thead><tbody>`;
+    sorted.forEach(e=>{
+      html+=`<tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+        <td style="padding:12px;color:var(--muted);white-space:nowrap">${e.date}</td>
+        <td style="padding:12px;font-weight:600">${e.advisor}</td>
+        <td style="padding:12px;text-align:center">
+          <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+            <div style="width:60px;height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:${e.overallScore}%;height:100%;background:${oc2(e.overallScore)};border-radius:2px"></div></div>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${oc2(e.overallScore)}">${e.overallScore}</span>
+          </div>
+        </td>
+        <td style="padding:12px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:${e.cementScore>=5?'var(--green)':e.cementScore>=3?'var(--accent)':'var(--red)'}">${e.cementScore!==null?e.cementScore+'/7':'—'}</td>
+        <td style="padding:12px;text-align:center">${clawBadge(e.clawbackRisk)}</td>
+        <td style="padding:12px;text-align:center;font-size:12px;color:var(--muted)">
+          ${e.priHigh>0?`<span style="color:var(--red);font-weight:600">H:${e.priHigh}</span> `:''}
+          ${e.priMed>0?`<span style="color:var(--accent)">M:${e.priMed}</span> `:''}
+          ${e.priLow>0?`<span style="color:var(--green)">L:${e.priLow}</span>`:''}
+        </td>
+        <td style="padding:12px;font-size:12px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.trainingFocus||'—'}</td>
+        <td style="padding:12px"><button onclick="deleteTrackerEntry(${e.id})" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">✕</button></td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+    document.getElementById('tracker-view-log').innerHTML=html;
+  }
+
+  // Rep summary view
+  const repNames=[...new Set(evals.map(e=>e.advisor))].sort();
+  if(!repNames.length){
+    document.getElementById('tracker-view-summary').innerHTML=`<div style="text-align:center;padding:60px;color:var(--muted);font-size:14px;background:var(--card);border-radius:10px;border:1px solid var(--border)">No data yet.</div>`;
+  } else {
+    const repStats = repNames.map(rep=>{
+      const re = evals.filter(e=>e.advisor===rep);
+      const avg = Math.round(re.reduce((s,e)=>s+e.overallScore,0)/re.length);
+      const sortedRe = [...re].sort((a,b)=>a.date.localeCompare(b.date));
+      const trend = sortedRe.length>=2 ? sortedRe[sortedRe.length-1].overallScore - sortedRe[0].overallScore : 0;
+      const clawHigh = re.filter(e=>['high','critical'].includes(e.clawbackRisk)).length;
+      const cementRe = re.filter(e=>e.cementScore!==null);
+      const avgCem = cementRe.length ? (cementRe.reduce((s,e)=>s+e.cementScore,0)/cementRe.length).toFixed(1) : null;
+      const lastCall = sortedRe[sortedRe.length-1];
+      return {rep, count:re.length, avg, trend, clawHigh, avgCem, lastCall};
+    }).sort((a,b)=>b.avg-a.avg);
+
+    let html=`<div style="display:flex;flex-direction:column;gap:12px">`;
+    repStats.forEach((s,rank)=>{
+      const trendStr = s.trend>0?`<span style="color:var(--green)">▲ +${s.trend}</span>`:s.trend<0?`<span style="color:var(--red)">▼ ${s.trend}</span>`:`<span style="color:var(--muted)">— flat</span>`;
+      html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="width:32px;height:32px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:${rank===0?'var(--accent)':'var(--muted)'};flex-shrink:0">${rank+1}</div>
+        <div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:15px">${s.rep}</div><div style="font-size:12px;color:var(--muted)">${s.count} call${s.count!==1?'s':''} evaluated</div></div>
+        <div style="text-align:center;min-width:60px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Avg Score</div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:${oc2(s.avg)}">${s.avg}</div></div>
+        <div style="text-align:center;min-width:60px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Trend</div><div style="font-size:14px;font-weight:500">${trendStr}</div></div>
+        <div style="text-align:center;min-width:60px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Cement</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${s.avgCem>=5?'var(--green)':s.avgCem>=3?'var(--accent)':'var(--red)'}">${s.avgCem?s.avgCem+'/7':'—'}</div></div>
+        <div style="text-align:center;min-width:60px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Claw Flags</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${s.clawHigh>0?'var(--red)':'var(--green)'}">${s.clawHigh}</div></div>
+        <div style="min-width:120px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px">Last focus</div><div style="font-size:12px;color:var(--muted);line-height:1.4">${s.lastCall?.trainingFocus||'—'}</div></div>
+      </div>`;
+    });
+    html+='</div>';
+    document.getElementById('tracker-view-summary').innerHTML=html;
+  }
+}
+
+async function deleteTrackerEntry(id){
+  let evals = await loadTrackerEvals();
+  evals = evals.filter(e=>e.id!==id);
+  await window.storage.set(TRACKER_KEY, JSON.stringify(evals), false);
+  renderTrackerTab();
+}
+
+async function clearTrackerData(){
+  if(!confirm('Clear all tracker data? This cannot be undone.')) return;
+  await window.storage.set(TRACKER_KEY, JSON.stringify([]), false);
+  renderTrackerTab();
+}
 </script>
 </body>
 </html>
