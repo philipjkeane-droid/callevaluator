@@ -556,7 +556,7 @@ Return ONLY valid JSON, no markdown, no preamble:
 
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,temperature:0,system:CEMENT_SYSTEM,
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,temperature:0,system:CEMENT_SYSTEM,
         messages:[{role:"user",content:`Advisor: ${advisor}\nClient: ${client||'Not specified'}\n\nTRANSCRIPT:\n${transcript}\n\nEvaluate cementing only. Return valid JSON only.`}]})});
     if(!resp.ok){throw new Error(`API error: ${resp.status}`);}
     const data=await resp.json();
@@ -669,7 +669,7 @@ async function evaluateCall(){
   try{
     const saleInstruction=saleOnBoardChecked?`\n\nSALE ON BOARD — CONFIRMED BY MANAGER: The manager has confirmed a sale was agreed on this call. Cementing is MANDATORY. Evaluate cementing strictly against all 7 elements. If cementing is absent or incomplete, this is a FAIL regardless of everything else. Flag as high clawback risk if missing.`:'';
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,system:SCRIPT_CONTEXT,
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,temperature:0,system:SCRIPT_CONTEXT,
         messages:[{role:"user",content:`Advisor: ${advisor}\n${context?`Context: ${context}\n`:''}${previousCallsContext}${saleInstruction}\n\nTRANSCRIPT:\n${transcript}\n\nDetect call type, product, outcome. Evaluate strictly. Return valid JSON only.`}]})});
     const data=await resp.json();
     let raw=data.content.map(i=>i.text||'').join('');
@@ -999,7 +999,7 @@ async function generateCaseReport(){
 
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     let raw=data.content.map(i=>i.text||'').join('');
     const report=JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -1065,7 +1065,7 @@ async function generateEmail(){
   const prompt=`You are Phil, sales manager at LowQuotes. Write a summary coaching email to an advisor based on this call evaluation.\n\nSTRUCTURE:\n1. Opening — identify the specific call. One sentence setting the tone.\n2. "What You Did Well" — 2-4 things. For EACH positive, include a short direct quote from the transcript in *italics*. Explain WHY it was effective.\n3. "Areas for Improvement" — 2-4 things. For EACH issue, include a short direct quote or describe the specific moment. Explain what should have been said instead with a concrete example.\n4. "Key Takeaway" — one sentence summary of the single biggest thing to focus on.\n5. "My Follow-Up" — Phil commits to a specific review action.\n\nTONE: Coaching-focused but firm. Lead with positives. Use natural paragraphs. Professional.\nCRITICAL: Extract client name from the transcript. Transcript quotes must be REAL extracts — never fabricate quotes.\n\nADVISOR: ${advisor} | CALL TYPE: ${r.detectedCallType||''} | PRODUCT: ${r.detectedProduct||''} | OUTCOME: ${r.detectedOutcome||''} | SCORE: ${r.overallScore}/100 | CLAWBACK: ${r.clawbackRisk||''}\n${r.cementingVerdict&&r.cementingVerdict!=='null'?`CEMENTING: ${r.cementingVerdict}`:''}\nSCORES: ${scored.join(' | ')}\nPOSITIVES: ${(r.positives||[]).join('; ')}\nISSUES: ${(r.corrections||[]).map((c,i)=>`${i+1}. ${c.title}: ${c.whatWentWrong}`).join(' | ')}\nTRAINING FOCUS: ${r.trainingFocus||''}\n\nTRANSCRIPT:\n${currentTranscript?currentTranscript.substring(0,15000):'Not available'}\n\nReturn ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and product>","body":"<full email with section headings, paragraphs separated by \\n\\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     if(!resp.ok){throw new Error("API error: "+resp.status);}
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
@@ -1095,7 +1095,7 @@ async function generateCementEmail(){
   const prompt=`You are Phil, sales manager at LowQuotes. Write a coaching email about CEMENTING on a completed sale.\n\nSTRUCTURE:\n1. Opening — identify the call (client: ${client||'unknown'}). One sentence setting the tone.\n2. "What You Did Well" — For each PASSED cement element, include a short direct quote from the transcript in *italics*.\n3. "Areas for Improvement" — For each FAILED element, describe the specific moment with a transcript quote if possible. Explain exactly what should have been said with a concrete example script.\n4. "Key Takeaway" — one sentence, single biggest thing to focus on next sale.\n5. "My Follow-Up" — Phil commits to a specific review action.\n\nTONE: Coaching-focused but firm. Lead with positives.\nCRITICAL: Transcript quotes must be REAL extracts — never fabricate.\n\nADVISOR: ${advisor} | CLIENT: ${client||'Unknown'} | VERDICT: ${r.verdict} | SCORE: ${r.score}/7 | CLAWBACK RISK: ${r.clawbackRisk}\n${r.headline?'HEADLINE: '+r.headline:''}\n${r.biggestGap?'BIGGEST GAP: '+r.biggestGap:''}\n\nCEMENT ELEMENT RESULTS:\n${elementSummary}\n\nTRANSCRIPT:\n${transcript?transcript.substring(0,15000):'Not available'}\n\nReturn ONLY JSON: {"to":"${advisor}","subject":"<specific — client name and cementing verdict>","body":"<full email with section headings, paragraphs separated by \\n\\n, transcript quotes in *italics*, signed Phil>","followUpAction":"<Phil specific follow-up 1-2 sentences>"}`;
   try{
     const resp=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,temperature:0,messages:[{role:"user",content:prompt}]})});
     const data=await resp.json();
     const email=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
     document.getElementById('emailTo').textContent=email.to;
